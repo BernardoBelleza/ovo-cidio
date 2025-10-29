@@ -22,6 +22,10 @@ uniform mat4 projection;
 #define SPHERE 0
 #define BUNNY  1
 #define PLANE  2
+#define CELL_EMPTY_PLANE   10
+#define CELL_PATH_PLANE    11
+#define CELL_BLOCKED_PLANE 12
+#define CELL_BASE_PLANE    13
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -67,6 +71,7 @@ void main()
     // Coordenadas de textura U e V
     float U = 0.0;
     float V = 0.0;
+    vec3 Kd0 = vec3(0.5, 0.5, 0.5); // Cor padrão
 
     if ( object_id == SPHERE )
     {
@@ -117,9 +122,38 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
     }
+    else if ( object_id == CELL_EMPTY_PLANE )
+    {
+        // Célula vazia (verde claro) - pode colocar torre
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = vec3(0.4, 0.8, 0.4); // Verde claro
+    }
+    else if ( object_id == CELL_PATH_PLANE )
+    {
+        // Caminho (marrom/bege)
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = vec3(0.7, 0.6, 0.4); // Bege/marrom claro
+    }
+    else if ( object_id == CELL_BLOCKED_PLANE )
+    {
+        // Bloqueado (cinza escuro)
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = vec3(0.3, 0.3, 0.3); // Cinza escuro
+    }
+    else if ( object_id == CELL_BASE_PLANE )
+    {
+        // Base (azul)
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = vec3(0.2, 0.4, 0.9); // Azul
+    }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+    if (object_id == SPHERE || object_id == BUNNY || object_id == PLANE)
+        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));

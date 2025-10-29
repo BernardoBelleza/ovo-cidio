@@ -143,6 +143,9 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window);
 void TextRendering_ShowProjection(GLFWwindow* window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
 
+// Função para desenhar o grid do mapa
+void DrawMapGrid();
+
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -205,6 +208,86 @@ float g_ForearmAngleX = 0.0f;
 // Variáveis que controlam translação do torso
 float g_TorsoPositionX = 0.0f;
 float g_TorsoPositionY = 0.0f;
+
+// Variáveis da câmera livre (WASD)
+bool g_UseFreeCamera = false; // true = câmera livre, false = câmera look-at
+glm::vec4 g_CameraPosition = glm::vec4(0.0f, 2.0f, 5.0f, 1.0f);
+glm::vec4 g_CameraView = glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
+float g_CameraPhi_Free = 0.0f;
+float g_CameraTheta_Free = 3.14159f; // Começa olhando para -Z
+
+// ============================================================================
+// GRID DO MAPA (TOWER DEFENSE)
+// ============================================================================
+const int MAP_WIDTH = 15;
+const int MAP_HEIGHT = 15;
+
+// Tipos de células
+enum CellType {
+    CELL_EMPTY = 0,    // Pode colocar torre (verde claro)
+    CELL_PATH = 1,      // Caminho dos inimigos (marrom)
+    CELL_BLOCKED = 2,   // Bloqueado/paredes (cinza)
+    CELL_BASE = 3       // Base a ser defendida (azul)
+};
+
+// Grid do mapa
+CellType g_MapGrid[MAP_HEIGHT][MAP_WIDTH];
+
+// Função para inicializar o mapa
+void InitializeMap() {
+    // Layout do mapa (ASCII art para visualizar)
+    // 2 = BLOCKED (bordas)
+    // 1 = PATH (caminho)
+    // 0 = EMPTY (pode torre)
+    // 3 = BASE (destino)
+    
+    int layout[MAP_HEIGHT][MAP_WIDTH] = {
+        {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
+        {2,1,1,1,1,1,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,1,1,1,1,1,1,1,0,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,1,1,3,2},
+        {2,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+        {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2}
+    };
+    
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            g_MapGrid[i][j] = (CellType)layout[i][j];
+        }
+    }
+}
+
+// Converte coordenada de grid para mundo 3D (centro da célula)
+glm::vec3 GridToWorld(int gridX, int gridZ) {
+    float worldX = gridX - MAP_WIDTH/2.0f + 0.5f;
+    float worldZ = gridZ - MAP_HEIGHT/2.0f + 0.5f;
+    return glm::vec3(worldX, 0.0f, worldZ);
+}
+
+// Converte coordenada de mundo para grid
+glm::ivec2 WorldToGrid(glm::vec3 worldPos) {
+    int gridX = (int)(worldPos.x + MAP_WIDTH/2.0f);
+    int gridZ = (int)(worldPos.z + MAP_HEIGHT/2.0f);
+    return glm::ivec2(gridX, gridZ);
+}
+
+// Verifica se pode colocar torre nessa posição
+bool CanPlaceTower(int gridX, int gridZ) {
+    if (gridX < 0 || gridX >= MAP_WIDTH || gridZ < 0 || gridZ >= MAP_HEIGHT)
+        return false;
+    return g_MapGrid[gridZ][gridX] == CELL_EMPTY;
+}
+
+// ============================================================================
 
 // Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
 bool g_UsePerspectiveProjection = true;
@@ -297,6 +380,9 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
+    // Inicializa o grid do mapa (Tower Defense)
+    InitializeMap();
+
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
@@ -352,24 +438,38 @@ int main(int argc, char* argv[])
         // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
 
-        // Computamos a posição da câmera utilizando coordenadas esféricas.  As
-        // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
-        // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
-        // e ScrollCallback().
-        float r = g_CameraDistance;
-        float y = r*sin(g_CameraPhi);
-        float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-        float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+        // Definimos variáveis da câmera
+        glm::vec4 camera_position_c;
+        glm::vec4 camera_view_vector;
+        glm::vec4 camera_up_vector = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
-        // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
-        // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = glm::vec4(x,y,z,1.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
-        glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        if (g_UseFreeCamera)
+        {
+            // ========== CÂMERA LIVRE ==========
+            // Atualiza o vetor view baseado nos ângulos
+            g_CameraView.x = cos(g_CameraPhi_Free) * sin(g_CameraTheta_Free);
+            g_CameraView.y = sin(g_CameraPhi_Free);
+            g_CameraView.z = cos(g_CameraPhi_Free) * cos(g_CameraTheta_Free);
+
+            camera_position_c = g_CameraPosition;
+            camera_view_vector = g_CameraView;
+        }
+        else
+        {
+            // ========== CÂMERA LOOK-AT (original) ==========
+            // Computamos a posição da câmera utilizando coordenadas esféricas.
+            float r = g_CameraDistance;
+            float y = r*sin(g_CameraPhi);
+            float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
+            float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+
+            camera_position_c  = glm::vec4(x,y,z,1.0f);
+            glm::vec4 camera_lookat_l = glm::vec4(0.0f,0.0f,0.0f,1.0f);
+            camera_view_vector = camera_lookat_l - camera_position_c;
+        }
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
-        // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
+        // definir o sistema de coordenadas da câmera.
         glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
 
         // Agora computamos a matriz de Projeção.
@@ -377,8 +477,8 @@ int main(int argc, char* argv[])
 
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-        float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -10.0f; // Posição do "far plane"
+        float nearplane = -0.1f;   // Posição do "near plane"
+        float farplane  = -100.0f; // Posição do "far plane" (aumentado para ver mais longe)
 
         if (g_UsePerspectiveProjection)
         {
@@ -429,11 +529,8 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, BUNNY);
         DrawVirtualObject("the_bunny");
 
-        // Desenhamos o plano do chão
-        model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, PLANE);
-        DrawVirtualObject("the_plane");
+        // Desenhamos o grid do mapa (Tower Defense)
+        DrawMapGrid();
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1075,19 +1172,36 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
     
-        // Atualizamos parâmetros da câmera com os deslocamentos
-        g_CameraTheta -= 0.01f*dx;
-        g_CameraPhi   += 0.01f*dy;
-    
-        // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
-        float phimax = 3.141592f/2;
-        float phimin = -phimax;
-    
-        if (g_CameraPhi > phimax)
-            g_CameraPhi = phimax;
-    
-        if (g_CameraPhi < phimin)
-            g_CameraPhi = phimin;
+        if (g_UseFreeCamera)
+        {
+            // ===== CÂMERA LIVRE =====
+            g_CameraTheta_Free -= 0.003f * dx;
+            g_CameraPhi_Free   -= 0.003f * dy;
+            
+            // Limita ângulo vertical
+            float phimax = 3.141592f/2.0f - 0.01f;
+            float phimin = -phimax;
+            
+            if (g_CameraPhi_Free > phimax)
+                g_CameraPhi_Free = phimax;
+            if (g_CameraPhi_Free < phimin)
+                g_CameraPhi_Free = phimin;
+        }
+        else
+        {
+            // ===== CÂMERA LOOK-AT =====
+            g_CameraTheta -= 0.01f*dx;
+            g_CameraPhi   += 0.01f*dy;
+        
+            float phimax = 3.141592f/2;
+            float phimin = -phimax;
+        
+            if (g_CameraPhi > phimax)
+                g_CameraPhi = phimax;
+        
+            if (g_CameraPhi < phimin)
+                g_CameraPhi = phimin;
+        }
     
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
@@ -1221,6 +1335,40 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         LoadShadersFromFiles();
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
+    }
+
+    // Tecla C: Alterna entre câmera livre e câmera look-at
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+    {
+        g_UseFreeCamera = !g_UseFreeCamera;
+        printf("Camera: %s\n", g_UseFreeCamera ? "LIVRE (WASD)" : "LOOK-AT");
+    }
+
+    // ===== CONTROLES DA CÂMERA LIVRE (WASD) =====
+    if (g_UseFreeCamera)
+    {
+        // Calcula vetores de direção
+        glm::vec4 camera_up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+        glm::vec4 w = -g_CameraView / norm(g_CameraView);
+        glm::vec4 u = crossproduct(camera_up, w) / norm(crossproduct(camera_up, w));
+
+        float speed = 0.3f;
+
+        // W - Frente
+        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            g_CameraPosition -= w * speed;
+
+        // S - Trás
+        if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            g_CameraPosition += w * speed;
+
+        // A - Esquerda
+        if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            g_CameraPosition -= u * speed;
+
+        // D - Direita
+        if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            g_CameraPosition += u * speed;
     }
 }
 
@@ -1525,6 +1673,49 @@ void PrintObjModelInfo(ObjModel* model)
     }
     printf("\n");
   }
+}
+
+// ============================================================================
+// FUNÇÃO PARA DESENHAR O GRID DO MAPA
+// ============================================================================
+void DrawMapGrid()
+{
+    #define CELL_EMPTY_PLANE   10
+    #define CELL_PATH_PLANE    11
+    #define CELL_BLOCKED_PLANE 12
+    #define CELL_BASE_PLANE    13
+    
+    for (int z = 0; z < MAP_HEIGHT; z++) {
+        for (int x = 0; x < MAP_WIDTH; x++) {
+            glm::vec3 worldPos = GridToWorld(x, z);
+            
+            // Matriz de transformação para cada célula
+            glm::mat4 model = Matrix_Translate(worldPos.x, -1.09f, worldPos.z)
+                            * Matrix_Scale(0.48f, 1.0f, 0.48f); // 0.48 para deixar espaço entre células
+            
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            
+            // Define a cor baseada no tipo de célula
+            CellType cellType = g_MapGrid[z][x];
+            
+            switch(cellType) {
+                case CELL_EMPTY:
+                    glUniform1i(g_object_id_uniform, CELL_EMPTY_PLANE); // Verde claro
+                    break;
+                case CELL_PATH:
+                    glUniform1i(g_object_id_uniform, CELL_PATH_PLANE); // Marrom/bege
+                    break;
+                case CELL_BLOCKED:
+                    glUniform1i(g_object_id_uniform, CELL_BLOCKED_PLANE); // Cinza escuro
+                    break;
+                case CELL_BASE:
+                    glUniform1i(g_object_id_uniform, CELL_BASE_PLANE); // Azul
+                    break;
+            }
+            
+            DrawVirtualObject("the_plane");
+        }
+    }
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
