@@ -1,3 +1,0 @@
-C:/Users/bener/FCG/ovo-sidio/build/CMakeFiles/main.dir
-C:/Users/bener/FCG/ovo-sidio/build/CMakeFiles/edit_cache.dir
-C:/Users/bener/FCG/ovo-sidio/build/CMakeFiles/rebuild_cache.dir
