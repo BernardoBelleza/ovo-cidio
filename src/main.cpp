@@ -218,6 +218,34 @@ float g_CameraPhi_Free = 0.0f;
 float g_CameraTheta_Free = 3.14159f; // Começa olhando para -Z
 
 // ============================================================================
+// SISTEMA DE FÍSICA (GRAVIDADE)
+// ============================================================================
+struct PhysicsObject {
+    glm::vec3 position;
+    glm::vec3 velocity;
+    float mass;
+    float radius;
+    bool onGround;
+};
+
+// Constantes físicas
+const float GRAVITY = -9.8f;
+const float DAMPING = 0.6f; // Reduz a velocidade ao colidir (quique)
+const float MIN_VELOCITY = 0.05f; // Velocidade mínima para parar
+
+// Objeto de física do chicken tower
+PhysicsObject g_ChickenPhysics = {
+    glm::vec3(0.0f, 5.0f, 0.0f), // position (vai ser atualizada depois)
+    glm::vec3(0.0f, 0.0f, 0.0f), // velocity
+    1.0f,                         // mass
+    0.3f,                         // radius (tamanho do objeto)
+    false                         // onGround
+};
+
+// Offset Y para corrigir modelos com base abaixo do centro
+const float CHICKEN_Y_OFFSET = -0.38f; // Ajusta para a base tocar o chão
+
+// ============================================================================
 // GRID DO MAPA (TOWER DEFENSE)
 // ============================================================================
 const int MAP_WIDTH = 15;
@@ -286,6 +314,55 @@ bool CanPlaceTower(int gridX, int gridZ) {
     if (gridX < 0 || gridX >= MAP_WIDTH || gridZ < 0 || gridZ >= MAP_HEIGHT)
         return false;
     return g_MapGrid[gridZ][gridX] == CELL_EMPTY;
+}
+
+// Retorna a altura do terreno baseada no tipo de célula
+float GetGroundHeight(int gridX, int gridZ) {
+    if (gridX < 0 || gridX >= MAP_WIDTH || gridZ < 0 || gridZ >= MAP_HEIGHT)
+        return 0.0f;
+    
+    CellType cell = g_MapGrid[gridZ][gridX];
+    
+    // Alturas diferentes para cada tipo de terreno
+    switch(cell) {
+        case CELL_EMPTY:    return 0.0f;   // Chão normal
+        case CELL_PATH:     return -0.1f;  // Caminho levemente mais baixo
+        case CELL_BLOCKED:  return 0.5f;   // Paredes elevadas
+        case CELL_BASE:     return 0.2f;   // Base levemente elevada
+        default:            return 0.0f;
+    }
+}
+
+// Atualiza física de um objeto (gravidade e colisão)
+void UpdatePhysics(PhysicsObject& obj, float deltaTime) {
+    if (obj.onGround && glm::abs(obj.velocity.y) < MIN_VELOCITY) {
+        obj.velocity.y = 0.0f;
+        return; // Objeto parou no chão
+    }
+    
+    // Aplica gravidade
+    obj.velocity.y += GRAVITY * deltaTime;
+    
+    // Atualiza posição
+    obj.position += obj.velocity * deltaTime;
+    
+    // Verifica colisão com o chão
+    glm::ivec2 gridPos = WorldToGrid(obj.position);
+    float groundHeight = GetGroundHeight(gridPos.x, gridPos.y);
+    
+    if (obj.position.y - obj.radius <= groundHeight) {
+        // Colidiu com o chão
+        obj.position.y = groundHeight + obj.radius;
+        obj.velocity.y = -obj.velocity.y * DAMPING; // Quique com amortecimento
+        
+        // Se a velocidade está muito baixa, para o objeto
+        if (glm::abs(obj.velocity.y) < MIN_VELOCITY) {
+            obj.onGround = true;
+            obj.velocity.y = 0.0f;
+        }
+    } else {
+        obj.onGround = false;
+    }
 }
 
 // ============================================================================
@@ -409,6 +486,12 @@ int main(int argc, char* argv[])
 
     // Carrega todos os modelos do Tower Defense
     LoadAllGameModels(g_VirtualScene);
+    
+    // Inicializa posição da física do chicken
+    int chickenGridX = 5;
+    int chickenGridZ = 5;
+    glm::vec3 chickenWorldPos = GridToWorld(chickenGridX, chickenGridZ);
+    g_ChickenPhysics.position = glm::vec3(chickenWorldPos.x, 5.0f, chickenWorldPos.z); // Começa 5 unidades acima
 
     if ( argc > 1 )
     {
@@ -431,8 +514,18 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
+    float prevTime = (float)glfwGetTime();
+    
     while (!glfwWindowShouldClose(window))
     {
+        // Calcula deltaTime para física
+        float currentTime = (float)glfwGetTime();
+        float deltaTime = currentTime - prevTime;
+        prevTime = currentTime;
+        
+        // Atualiza física
+        UpdatePhysics(g_ChickenPhysics, deltaTime);
+        
         // Aqui executamos as operações de renderização
 
         // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -527,38 +620,32 @@ int main(int argc, char* argv[])
         #define PLANE  2
 
         // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
+        // model = Matrix_Translate(-1.0f,0.0f,0.0f)
+        //       * Matrix_Rotate_Z(0.6f)
+        //       * Matrix_Rotate_X(0.2f)
+        //       * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+        // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        // glUniform1i(g_object_id_uniform, SPHERE);
+        // DrawVirtualObject("the_sphere");
 
-        // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f)
-              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
+        // // Desenhamos o modelo do coelho
+        // model = Matrix_Translate(1.0f,0.0f,0.0f)
+        //       * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
+        // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        // glUniform1i(g_object_id_uniform, BUNNY);
+        // DrawVirtualObject("the_bunny");
 
         // Desenhamos o grid do mapa (Tower Defense)
         DrawMapGrid();
 
-        // ===== EXEMPLO: Desenhar torre de chicken em posição específica do grid =====
-        // Escolha uma célula do grid (exemplo: linha 5, coluna 5)
-        int gridX = 5;
-        int gridZ = 5;
-        
-        // Converte coordenada do grid para posição no mundo 3D
-        glm::vec3 towerPosition = GridToWorld(gridX, gridZ);
-        
-        // Ajusta a altura (Y) para ficar em cima do chão
-        towerPosition.y = 0.0f; // ou 0.5f para levantar um pouco
+        // ===== CHICKEN TOWER com física/gravidade =====
+        // Usa a posição da física (X e Z fixos no grid, Y controlado pela gravidade)
+        glm::vec3 towerPosition = g_ChickenPhysics.position;
+        towerPosition.y += CHICKEN_Y_OFFSET; // Aplica offset para corrigir a base do modelo
         
         // Cria matriz de transformação
         model = Matrix_Translate(towerPosition.x, towerPosition.y, towerPosition.z)
-              * Matrix_Scale(0.3f, 0.3f, 0.3f)  // Ajuste o tamanho aqui
+              * Matrix_Scale(0.1f, 0.1f, 0.1f)  // Ajuste o tamanho aqui
               * Matrix_Rotate_Y(3.14159f / 2);  // Rotação opcional (90 graus)
         
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -1723,7 +1810,7 @@ void DrawMapGrid()
             glm::vec3 worldPos = GridToWorld(x, z);
             
             // Matriz de transformação para cada célula
-            glm::mat4 model = Matrix_Translate(worldPos.x, -1.09f, worldPos.z)
+            glm::mat4 model = Matrix_Translate(worldPos.x, 0.0f, worldPos.z)
                             * Matrix_Scale(0.48f, 1.0f, 0.48f); // 0.48 para deixar espaço entre células
             
             glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
