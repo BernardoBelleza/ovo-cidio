@@ -26,6 +26,10 @@ uniform mat4 projection;
 #define CELL_PATH_PLANE    11
 #define CELL_BLOCKED_PLANE 12
 #define CELL_BASE_PLANE    13
+
+// Tower Defense Models
+#define MODEL_CHICKEN_TOWER 20
+
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -121,6 +125,13 @@ void main()
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x;
         V = texcoords.y;
+    }
+    else if ( object_id == MODEL_CHICKEN_TOWER )
+    {
+        // Torre de galinha - usa textura
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
     }
     else if ( object_id == CELL_EMPTY_PLANE )
     {

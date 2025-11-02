@@ -47,6 +47,7 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "model_loader.h"
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -389,6 +390,9 @@ int main(int argc, char* argv[])
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    
+    // ===== TEXTURAS DO TOWER DEFENSE =====
+    LoadTextureImage("../../data/textures/towers/Low Poly Chicken_v1_001_Diffuse.png"); // TextureImage2
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -402,6 +406,9 @@ int main(int argc, char* argv[])
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
+
+    // Carrega todos os modelos do Tower Defense
+    LoadAllGameModels(g_VirtualScene);
 
     if ( argc > 1 )
     {
@@ -537,6 +544,26 @@ int main(int argc, char* argv[])
 
         // Desenhamos o grid do mapa (Tower Defense)
         DrawMapGrid();
+
+        // ===== EXEMPLO: Desenhar torre de chicken em posição específica do grid =====
+        // Escolha uma célula do grid (exemplo: linha 5, coluna 5)
+        int gridX = 5;
+        int gridZ = 5;
+        
+        // Converte coordenada do grid para posição no mundo 3D
+        glm::vec3 towerPosition = GridToWorld(gridX, gridZ);
+        
+        // Ajusta a altura (Y) para ficar em cima do chão
+        towerPosition.y = 0.0f; // ou 0.5f para levantar um pouco
+        
+        // Cria matriz de transformação
+        model = Matrix_Translate(towerPosition.x, towerPosition.y, towerPosition.z)
+              * Matrix_Scale(0.3f, 0.3f, 0.3f)  // Ajuste o tamanho aqui
+              * Matrix_Rotate_Y(3.14159f / 2);  // Rotação opcional (90 graus)
+        
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, MODEL_CHICKEN_TOWER);
+        DrawVirtualObject("Low_Poly_Chicken_v1_001");  // Nome do objeto do .obj
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
