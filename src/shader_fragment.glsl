@@ -29,6 +29,7 @@ uniform mat4 projection;
 
 // Tower Defense Models
 #define MODEL_CHICKEN_TOWER 20
+#define MODEL_THOMPSON_GUN  25
 
 uniform int object_id;
 
@@ -40,6 +41,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -132,6 +134,13 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
+    }
+    else if ( object_id == MODEL_THOMPSON_GUN )
+    {
+        // Arma Thompson - usa textura
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(TextureImage3, vec2(U, V)).rgb;
     }
     else if ( object_id == CELL_EMPTY_PLANE )
     {

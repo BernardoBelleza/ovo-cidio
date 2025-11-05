@@ -19,6 +19,8 @@ struct SceneObject;
 // Torres
 #define MODEL_CHICKEN_TOWER  20
 
+// Armas
+#define MODEL_THOMPSON_GUN   25
 
 // Inimigos
 

@@ -243,7 +243,25 @@ PhysicsObject g_ChickenPhysics = {
 };
 
 // Offset Y para corrigir modelos com base abaixo do centro
-const float CHICKEN_Y_OFFSET = -0.38f; // Ajusta para a base tocar o chão
+const float CHICKEN_Y_OFFSET = -0.43f; // Ajusta para a base tocar o chão
+
+// ============================================================================
+// SISTEMA DE ARMA ANEXADA
+// ============================================================================
+struct AttachedWeapon {
+    glm::vec3 offset;        // Posição relativa ao objeto principal
+    glm::vec3 rotation;      // Rotação (Euler angles em radianos)
+    glm::vec3 scale;         // Escala relativa
+    bool enabled;            // Se a arma está visível
+};
+
+// Arma equipada na galinha (ajustar esses valores com as teclas I/J/K/L/U/O)
+AttachedWeapon g_ChickenWeapon = {
+    glm::vec3(-1.60f, 9.00f, 2.60f), // offset (X, Y, Z) - posição ajustada
+    glm::vec3(0.0f, 0.0f, 0.0f),     // rotation
+    glm::vec3(14.0f, 14.0f, 14.0f),     // scale
+    true                              // enabled
+};
 
 // ============================================================================
 // GRID DO MAPA (TOWER DEFENSE)
@@ -470,6 +488,7 @@ int main(int argc, char* argv[])
     
     // ===== TEXTURAS DO TOWER DEFENSE =====
     LoadTextureImage("../../data/textures/towers/Low Poly Chicken_v1_001_Diffuse.png"); // TextureImage2
+    LoadTextureImage("../../data/textures/guns/m1a1_textures/M1A1 Submachine Gun_AlbedoSmoothness.png"); // TextureImage3
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -643,14 +662,44 @@ int main(int argc, char* argv[])
         glm::vec3 towerPosition = g_ChickenPhysics.position;
         towerPosition.y += CHICKEN_Y_OFFSET; // Aplica offset para corrigir a base do modelo
         
-        // Cria matriz de transformação
-        model = Matrix_Translate(towerPosition.x, towerPosition.y, towerPosition.z)
-              * Matrix_Scale(0.1f, 0.1f, 0.1f)  // Ajuste o tamanho aqui
-              * Matrix_Rotate_Y(3.14159f / 2);  // Rotação opcional (90 graus)
+        // Cria matriz de transformação da galinha
+        glm::mat4 chickenModel = Matrix_Translate(towerPosition.x, towerPosition.y, towerPosition.z)
+                               * Matrix_Scale(0.1f, 0.1f, 0.1f)
+                               * Matrix_Rotate_Y(3.14159f / 2);
         
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        // Desenha a galinha
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(chickenModel));
         glUniform1i(g_object_id_uniform, MODEL_CHICKEN_TOWER);
-        DrawVirtualObject("Low_Poly_Chicken_v1_001");  // Nome do objeto do .obj
+        DrawVirtualObject("Low_Poly_Chicken_v1_001");
+        
+        // ===== DESENHA A ARMA ANEXADA À GALINHA =====
+        if (g_ChickenWeapon.enabled)
+        {
+            // Arma é desenhada relativa à transformação da galinha
+            glm::mat4 weaponModel = chickenModel
+                                  * Matrix_Translate(g_ChickenWeapon.offset.x, 
+                                                    g_ChickenWeapon.offset.y, 
+                                                    g_ChickenWeapon.offset.z)
+                                  * Matrix_Rotate_X(g_ChickenWeapon.rotation.x)
+                                  * Matrix_Rotate_Y(g_ChickenWeapon.rotation.y)
+                                  * Matrix_Rotate_Z(g_ChickenWeapon.rotation.z)
+                                  * Matrix_Scale(g_ChickenWeapon.scale.x, 
+                                                g_ChickenWeapon.scale.y, 
+                                                g_ChickenWeapon.scale.z);
+            
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(weaponModel));
+            glUniform1i(g_object_id_uniform, MODEL_THOMPSON_GUN);
+            
+            // Desenha todas as partes da Thompson
+            DrawVirtualObject("stock_Cube.010");
+            DrawVirtualObject("M1A1_Cube.019");
+            DrawVirtualObject("bolt_Cube.029");
+            DrawVirtualObject("mag_Cube.030");
+            DrawVirtualObject("magRelease_Plane.003");
+            DrawVirtualObject("fireSelect_Cylinder.019");
+            DrawVirtualObject("trigger_Cube.031");
+            DrawVirtualObject("safety_Cylinder.025");
+        }
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -818,6 +867,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 
@@ -1462,6 +1512,58 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     {
         g_UseFreeCamera = !g_UseFreeCamera;
         printf("Camera: %s\n", g_UseFreeCamera ? "LIVRE (WASD)" : "LOOK-AT");
+    }
+
+    // Tecla G: Reset da gravidade 
+    if (key == GLFW_KEY_G && action == GLFW_PRESS)
+    {
+        g_ChickenPhysics.position.y = 5.0f; // Reseta para 5 unidades acima
+        g_ChickenPhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f); // Zera a velocidade
+        g_ChickenPhysics.onGround = false; // Marca que não está no chão
+    }
+    
+    // Tecla T: Toggle arma (mostra/esconde)
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+    {
+        g_ChickenWeapon.enabled = !g_ChickenWeapon.enabled;
+        printf("Arma: %s\n", g_ChickenWeapon.enabled ? "VISÍVEL" : "ESCONDIDA");
+    }
+
+    // ===== AJUSTAR POSIÇÃO DA ARMA (TECLAS I, K, J, L, U, O) =====
+    float offset_step = 0.05f;
+    bool weapon_adjusted = false;
+    
+    if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        g_ChickenWeapon.offset.y += offset_step;  // Cima
+        weapon_adjusted = true;
+    }
+    if (key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        g_ChickenWeapon.offset.y -= offset_step;  // Baixo
+        weapon_adjusted = true;
+    }
+    if (key == GLFW_KEY_J && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        g_ChickenWeapon.offset.x -= offset_step;  // Esquerda
+        weapon_adjusted = true;
+    }
+    if (key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        g_ChickenWeapon.offset.x += offset_step;  // Direita
+        weapon_adjusted = true;
+    }
+    if (key == GLFW_KEY_U && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        g_ChickenWeapon.offset.z += offset_step;  // Frente
+        weapon_adjusted = true;
+    }
+    if (key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        g_ChickenWeapon.offset.z -= offset_step;  // Trás
+        weapon_adjusted = true;
+    }
+    
+    // Imprime valores atuais quando ajustado
+    if (weapon_adjusted) {
+        printf("Weapon offset: (%.2f, %.2f, %.2f)\n", 
+               g_ChickenWeapon.offset.x, 
+               g_ChickenWeapon.offset.y, 
+               g_ChickenWeapon.offset.z);
     }
 
     // ===== CONTROLES DA CÂMERA LIVRE (WASD) =====
