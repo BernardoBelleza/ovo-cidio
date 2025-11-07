@@ -1,6 +1,7 @@
 #include "tower_system.h"
 #include "model_loader.h"
 #include <cstdio>
+#include <cmath>
 #include <glad/glad.h>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -26,6 +27,11 @@ extern int g_MapGrid[15][15];
 
 // Funções de renderização (definidas em main.cpp)
 extern void DrawVirtualObject(const char* object_name);
+
+// Variáveis uniformes do shader (definidas em main.cpp)
+extern GLint g_model_uniform;
+extern GLint g_object_id_uniform;
+extern GLuint g_GpuProgramID;
 
 // Funções de transformação de matrizes (definidas em matrices.cpp)
 extern glm::mat4 Matrix_Translate(float tx, float ty, float tz);
@@ -64,6 +70,7 @@ const float CHICKEN_Y_OFFSET = -0.43f;
 
 Tower g_Towers[MAX_TOWERS];
 int g_TowerCount = 0;
+int g_SelectedTowerIndex = -1;  // -1 = nenhuma torre selecionada
 
 // ============================================================================
 // IMPLEMENTAÇÃO DAS FUNÇÕES
@@ -79,8 +86,12 @@ void InitializeTowers() {
         g_Towers[i].physics.mass = 1.0f;
         g_Towers[i].physics.radius = 0.3f;
         g_Towers[i].physics.onGround = false;
+        g_Towers[i].attackRange = 3.0f;   // 3 células de alcance
+        g_Towers[i].attackDamage = 10.0f; // 10 de dano
+        g_Towers[i].attackSpeed = 1.0f;   // 1 ataque por segundo
     }
     g_TowerCount = 0;
+    g_SelectedTowerIndex = -1;
     printf("[TORRE] Sistema de torres inicializado (max: %d)\n", MAX_TOWERS);
 }
 
@@ -112,6 +123,11 @@ bool AddTower(int gridX, int gridZ) {
     g_Towers[g_TowerCount].physics.mass = 1.0f;
     g_Towers[g_TowerCount].physics.radius = 0.3f;
     g_Towers[g_TowerCount].physics.onGround = false;
+    
+    // Inicializa atributos de combate
+    g_Towers[g_TowerCount].attackRange = 3.0f;
+    g_Towers[g_TowerCount].attackDamage = 10.0f;
+    g_Towers[g_TowerCount].attackSpeed = 1.0f;
     
     g_TowerCount++;
     
@@ -218,4 +234,74 @@ bool CanPlaceTower(int gridX, int gridZ) {
     if (gridX < 0 || gridX >= MAP_SIZE || gridZ < 0 || gridZ >= MAP_SIZE)
         return false;
     return g_MapGrid[gridZ][gridX] == CELL_EMPTY;
+}
+
+// Seleciona torre exatamente na posição do grid clicado
+int SelectTowerAtPosition(int gridX, int gridZ) {
+    // Procura torre exatamente na posição clicada
+    for (int i = 0; i < g_TowerCount; i++) {
+        if (g_Towers[i].active && g_Towers[i].gridX == gridX && g_Towers[i].gridZ == gridZ) {
+            return i;
+        }
+    }
+    
+    return -1; // Nenhuma torre encontrada nesta posição
+}
+
+// Desenha círculo de alcance ao redor da torre selecionada
+void DrawTowerRangeCircle() {
+    if (g_SelectedTowerIndex < 0 || g_SelectedTowerIndex >= g_TowerCount)
+        return;
+    
+    if (!g_Towers[g_SelectedTowerIndex].active)
+        return;
+    
+    Tower& tower = g_Towers[g_SelectedTowerIndex];
+    glm::vec3 center = tower.physics.position;
+    float range = tower.attackRange;
+    int segments = 32;
+    
+    // Acessa variáveis globais do shader
+    extern GLint g_model_uniform;
+    extern GLint g_object_id_uniform;
+    
+    // Desenha várias linhas radiais formando um círculo
+    for (int i = 0; i < segments; i++) {
+        float angle1 = 2.0f * 3.14159f * i / segments;
+        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
+        
+        glm::vec3 p1 = center + glm::vec3(range * cos(angle1), 0.0f, range * sin(angle1));
+        glm::vec3 p2 = center + glm::vec3(range * cos(angle2), 0.0f, range * sin(angle2));
+        
+        // Desenha pequenos planos/linhas conectando os pontos
+        glm::mat4 model = Matrix_Translate(p1.x, center.y, p1.z)
+                        * Matrix_Scale(0.05f, 0.05f, 0.05f);
+        
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, 99); // ID para círculo amarelo
+        DrawVirtualObject("the_plane");
+    }
+}
+
+// Exibe informações da torre selecionada no console
+void ShowTowerInfo(int towerIndex) {
+    if (towerIndex < 0 || towerIndex >= g_TowerCount)
+        return;
+    
+    if (!g_Towers[towerIndex].active)
+        return;
+    
+    Tower& tower = g_Towers[towerIndex];
+    
+    printf("\n========== TORRE #%d ==========\n", towerIndex + 1);
+    printf("Posicao Grid: (%d, %d)\n", tower.gridX, tower.gridZ);
+    printf("Posicao World: (%.2f, %.2f, %.2f)\n", 
+           tower.physics.position.x, 
+           tower.physics.position.y, 
+           tower.physics.position.z);
+    printf("Alcance: %.1f celulas\n", tower.attackRange);
+    printf("Dano: %.1f\n", tower.attackDamage);
+    printf("Velocidade Ataque: %.1f atk/s\n", tower.attackSpeed);
+    printf("No chao: %s\n", tower.physics.onGround ? "Sim" : "Nao");
+    printf("===============================\n\n");
 }

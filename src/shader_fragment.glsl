@@ -31,6 +31,9 @@ uniform mat4 projection;
 #define MODEL_CHICKEN_TOWER 20
 #define MODEL_THOMPSON_GUN  25
 
+// Tower Range Circle
+#define TOWER_RANGE_CIRCLE  99
+
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -169,6 +172,11 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = vec3(0.2, 0.4, 0.9); // Azul
+    }
+    else if ( object_id == TOWER_RANGE_CIRCLE )
+    {
+        // Círculo de alcance da torre (amarelo brilhante)
+        Kd0 = vec3(1.0, 1.0, 0.0); // Amarelo puro
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0

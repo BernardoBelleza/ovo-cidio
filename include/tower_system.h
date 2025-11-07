@@ -24,6 +24,9 @@ struct Tower {
     int gridX, gridZ;        // Posicao no grid
     bool active;             // Se a torre esta ativa
     PhysicsObject physics;   // Fisica da torre (gravidade, colisao)
+    float attackRange;       // Alcance de ataque
+    float attackDamage;      // Dano do ataque
+    float attackSpeed;       // Velocidade de ataque (ataques por segundo)
 };
 
 // ============================================================================
@@ -41,6 +44,7 @@ extern const float CHICKEN_Y_OFFSET;
 
 extern Tower g_Towers[MAX_TOWERS];
 extern int g_TowerCount;
+extern int g_SelectedTowerIndex;  // Índice da torre selecionada (-1 = nenhuma)
 
 // ============================================================================
 // FUNÇÕES DO SISTEMA DE TORRES
@@ -66,5 +70,14 @@ void DrawAllTowers();
 
 // Verifica se pode colocar torre em uma posição
 bool CanPlaceTower(int gridX, int gridZ);
+
+// Seleciona torre mais próxima de uma posição no grid
+int SelectTowerAtPosition(int gridX, int gridZ);
+
+// Desenha círculo de alcance da torre selecionada
+void DrawTowerRangeCircle();
+
+// Exibe informações da torre selecionada
+void ShowTowerInfo(int towerIndex);
 
 #endif // TOWER_SYSTEM_H

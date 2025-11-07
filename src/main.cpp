@@ -634,6 +634,9 @@ int main(int argc, char* argv[])
 
         // ===== DESENHA TODAS AS TORRES COLOCADAS NO MAPA =====
         DrawAllTowers();
+        
+        // ===== DESENHA CÍRCULO DE ALCANCE DA TORRE SELECIONADA =====
+        DrawTowerRangeCircle();
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1207,16 +1210,92 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 // de tempo. Utilizadas no callback CursorPosCallback() abaixo.
 double g_LastCursorPosX, g_LastCursorPosY;
 
+// Função que converte clique do mouse em posição do grid usando raycast
+// Funciona tanto para câmera livre quanto look-at
+bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, int& outGridX, int& outGridZ)
+{
+    // Pega dimensões da janela
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    
+    // Normaliza mouse para [-1, 1]
+    float x = (2.0f * mouseX) / width - 1.0f;
+    float y = 1.0f - (2.0f * mouseY) / height;
+    
+    // Ray em clip space
+    glm::vec4 rayClip = glm::vec4(x, y, -1.0f, 1.0f);
+    
+    // Converte para view space
+    float fov = 3.141592f / 3.0f;
+    glm::mat4 proj = Matrix_Perspective(fov, g_ScreenRatio, -0.1f, -50.0f);
+    glm::vec4 rayEye = glm::inverse(proj) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+    
+    // Calcula posição e direção da câmera baseado no modo atual
+    glm::vec4 cameraPos, cameraView;
+    
+    if (g_UseFreeCamera) {
+        // CÂMERA LIVRE: Usa variáveis globais diretas
+        cameraPos = g_CameraPosition;
+        cameraView = g_CameraView;
+    } else {
+        // CÂMERA LOOK-AT: Calcula posição esférica
+        float r = g_CameraDistance;
+        float y_cam = r * sin(g_CameraPhi);
+        float z_cam = r * cos(g_CameraPhi) * cos(g_CameraTheta);
+        float x_cam = r * cos(g_CameraPhi) * sin(g_CameraTheta);
+        
+        cameraPos = glm::vec4(x_cam, y_cam, z_cam, 1.0f);
+        glm::vec4 lookat = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        cameraView = lookat - cameraPos;
+    }
+    
+    // Converte para world space
+    glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    glm::mat4 view = Matrix_Camera_View(cameraPos, cameraView, up);
+    glm::vec3 rayDir = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
+    glm::vec3 rayOrigin = glm::vec3(cameraPos);
+    
+    // Intersecção raio-plano (Y=0)
+    if (glm::abs(rayDir.y) < 0.001f) return false;
+    float t = -rayOrigin.y / rayDir.y;
+    if (t < 0.0f) return false;
+    
+    // Ponto de hit
+    glm::vec3 hitPoint = rayOrigin + rayDir * t;
+    glm::ivec2 grid = WorldToGrid(hitPoint);
+    
+    outGridX = grid.x;
+    outGridZ = grid.y;
+    
+    return (outGridX >= 0 && outGridX < 15 && outGridZ >= 0 && outGridZ < 15);
+}
+
 // Função callback chamada sempre que o usuário aperta algum dos botões do mouse
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        // Se o usuário pressionou o botão esquerdo do mouse, guardamos a
-        // posição atual do cursor nas variáveis g_LastCursorPosX e
-        // g_LastCursorPosY.  Também, setamos a variável
-        // g_LeftMouseButtonPressed como true, para saber que o usuário está
-        // com o botão esquerdo pressionado.
+        // CLIQUE ESQUERDO: Seleciona torre
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        
+        // Usa raycast para encontrar célula do grid
+        int gridX, gridZ;
+        if (GetGridPositionFromMouse(window, xpos, ypos, gridX, gridZ)) {
+            // Tenta selecionar torre nessa posição
+            int towerIndex = SelectTowerAtPosition(gridX, gridZ);
+            if (towerIndex >= 0) {
+                g_SelectedTowerIndex = towerIndex;
+                ShowTowerInfo(towerIndex);
+                printf("[SELECAO] Torre #%d selecionada\n", towerIndex + 1);
+            } else {
+                g_SelectedTowerIndex = -1;
+                printf("[SELECAO] Nenhuma torre nessa posicao\n");
+            }
+        }
+        
+        // Guarda estado do mouse
         glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
         g_LeftMouseButtonPressed = true;
     }
@@ -1228,18 +1307,23 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {
-        // CLIQUE DIREITO: Adiciona torre no grid
-        // Pega posicao do mouse
+        // CLIQUE DIREITO: Adiciona torre onde o mouse clicou
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         
-        // Converte posicao do mouse para grid (simples: usa camera position)
-        // Por enquanto, vamos usar a posicao da camera para determinar grid
-        glm::vec3 cameraPos = glm::vec3(g_CameraPosition.x, 0.0f, g_CameraPosition.z);
-        glm::ivec2 gridPos = WorldToGrid(cameraPos);
-        
-        // Tenta adicionar torre
-        AddTower(gridPos.x, gridPos.y);
+        // Usa raycast para encontrar célula do grid
+        int gridX, gridZ;
+        if (GetGridPositionFromMouse(window, xpos, ypos, gridX, gridZ)) {
+            // Verifica se pode colocar torre (célula vazia = 0)
+            if (CanPlaceTower(gridX, gridZ)) {
+                AddTower(gridX, gridZ);
+                printf("[GRID] Torre colocada em (%d, %d)\n", gridX, gridZ);
+            } else {
+                printf("[GRID] Celula (%d, %d) bloqueada\n", gridX, gridZ);
+            }
+        } else {
+            printf("[GRID] Clique fora do mapa\n");
+        }
         
         // Guarda estado do mouse
         glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
