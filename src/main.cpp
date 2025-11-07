@@ -48,6 +48,8 @@
 #include "utils.h"
 #include "matrices.h"
 #include "model_loader.h"
+#include "game_attributes.h"
+#include "tower_system.h"
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -220,20 +222,9 @@ float g_CameraTheta_Free = 3.14159f; // Começa olhando para -Z
 // ============================================================================
 // SISTEMA DE FÍSICA (GRAVIDADE)
 // ============================================================================
-struct PhysicsObject {
-    glm::vec3 position;
-    glm::vec3 velocity;
-    float mass;
-    float radius;
-    bool onGround;
-};
+// PhysicsObject, Tower e funções movidas para tower_system.h/cpp
 
-// Constantes físicas
-const float GRAVITY = -9.8f;
-const float DAMPING = 0.6f; // Reduz a velocidade ao colidir (quique)
-const float MIN_VELOCITY = 0.05f; // Velocidade mínima para parar
-
-// Objeto de física do chicken tower
+// Objeto de física do chicken tower (principal)
 PhysicsObject g_ChickenPhysics = {
     glm::vec3(0.0f, 5.0f, 0.0f), // position (vai ser atualizada depois)
     glm::vec3(0.0f, 0.0f, 0.0f), // velocity
@@ -241,9 +232,6 @@ PhysicsObject g_ChickenPhysics = {
     0.3f,                         // radius (tamanho do objeto)
     false                         // onGround
 };
-
-// Offset Y para corrigir modelos com base abaixo do centro
-const float CHICKEN_Y_OFFSET = -0.43f; // Ajusta para a base tocar o chão
 
 // ============================================================================
 // SISTEMA DE ARMA ANEXADA
@@ -262,6 +250,11 @@ AttachedWeapon g_ChickenWeapon = {
     glm::vec3(14.0f, 14.0f, 14.0f),     // scale
     true                              // enabled
 };
+
+// ============================================================================
+// SISTEMA DE TORRES (Tower Defense)
+// ============================================================================
+// Estruturas e funções movidas para tower_system.h/cpp
 
 // ============================================================================
 // GRID DO MAPA (TOWER DEFENSE)
@@ -327,13 +320,11 @@ glm::ivec2 WorldToGrid(glm::vec3 worldPos) {
     return glm::ivec2(gridX, gridZ);
 }
 
-// Verifica se pode colocar torre nessa posição
-bool CanPlaceTower(int gridX, int gridZ) {
-    if (gridX < 0 || gridX >= MAP_WIDTH || gridZ < 0 || gridZ >= MAP_HEIGHT)
-        return false;
-    return g_MapGrid[gridZ][gridX] == CELL_EMPTY;
-}
+// ============================================================================
+// IMPLEMENTACAO DO SISTEMA DE TORRES
+// ============================================================================
 
+// Inicializa sistema de torres
 // Retorna a altura do terreno baseada no tipo de célula
 float GetGroundHeight(int gridX, int gridZ) {
     if (gridX < 0 || gridX >= MAP_WIDTH || gridZ < 0 || gridZ >= MAP_HEIGHT)
@@ -352,37 +343,6 @@ float GetGroundHeight(int gridX, int gridZ) {
 }
 
 // Atualiza física de um objeto (gravidade e colisão)
-void UpdatePhysics(PhysicsObject& obj, float deltaTime) {
-    if (obj.onGround && glm::abs(obj.velocity.y) < MIN_VELOCITY) {
-        obj.velocity.y = 0.0f;
-        return; // Objeto parou no chão
-    }
-    
-    // Aplica gravidade
-    obj.velocity.y += GRAVITY * deltaTime;
-    
-    // Atualiza posição
-    obj.position += obj.velocity * deltaTime;
-    
-    // Verifica colisão com o chão
-    glm::ivec2 gridPos = WorldToGrid(obj.position);
-    float groundHeight = GetGroundHeight(gridPos.x, gridPos.y);
-    
-    if (obj.position.y - obj.radius <= groundHeight) {
-        // Colidiu com o chão
-        obj.position.y = groundHeight + obj.radius;
-        obj.velocity.y = -obj.velocity.y * DAMPING; // Quique com amortecimento
-        
-        // Se a velocidade está muito baixa, para o objeto
-        if (glm::abs(obj.velocity.y) < MIN_VELOCITY) {
-            obj.onGround = true;
-            obj.velocity.y = 0.0f;
-        }
-    } else {
-        obj.onGround = false;
-    }
-}
-
 // ============================================================================
 
 // Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
@@ -403,6 +363,11 @@ GLint g_bbox_max_uniform;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
+// ============================================================================
+// IMPLEMENTACAO DAS FUNCOES DE RENDERIZACAO DE TORRES
+// ============================================================================
+
+// Funcao reutilizavel para desenhar galinha com arma anexada
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -506,6 +471,9 @@ int main(int argc, char* argv[])
     // Carrega todos os modelos do Tower Defense
     LoadAllGameModels(g_VirtualScene);
     
+    // Inicializa sistema de torres
+    InitializeTowers();
+    
     // Inicializa posição da física do chicken
     int chickenGridX = 5;
     int chickenGridZ = 5;
@@ -542,8 +510,11 @@ int main(int argc, char* argv[])
         float deltaTime = currentTime - prevTime;
         prevTime = currentTime;
         
-        // Atualiza física
+        // Atualiza física da galinha principal
         UpdatePhysics(g_ChickenPhysics, deltaTime);
+        
+        // Atualiza física de todas as torres
+        UpdateAllTowersPhysics(deltaTime);
         
         // Aqui executamos as operações de renderização
 
@@ -658,48 +629,11 @@ int main(int argc, char* argv[])
         DrawMapGrid();
 
         // ===== CHICKEN TOWER com física/gravidade =====
-        // Usa a posição da física (X e Z fixos no grid, Y controlado pela gravidade)
-        glm::vec3 towerPosition = g_ChickenPhysics.position;
-        towerPosition.y += CHICKEN_Y_OFFSET; // Aplica offset para corrigir a base do modelo
-        
-        // Cria matriz de transformação da galinha
-        glm::mat4 chickenModel = Matrix_Translate(towerPosition.x, towerPosition.y, towerPosition.z)
-                               * Matrix_Scale(0.1f, 0.1f, 0.1f)
-                               * Matrix_Rotate_Y(3.14159f / 2);
-        
-        // Desenha a galinha
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(chickenModel));
-        glUniform1i(g_object_id_uniform, MODEL_CHICKEN_TOWER);
-        DrawVirtualObject("Low_Poly_Chicken_v1_001");
-        
-        // ===== DESENHA A ARMA ANEXADA À GALINHA =====
-        if (g_ChickenWeapon.enabled)
-        {
-            // Arma é desenhada relativa à transformação da galinha
-            glm::mat4 weaponModel = chickenModel
-                                  * Matrix_Translate(g_ChickenWeapon.offset.x, 
-                                                    g_ChickenWeapon.offset.y, 
-                                                    g_ChickenWeapon.offset.z)
-                                  * Matrix_Rotate_X(g_ChickenWeapon.rotation.x)
-                                  * Matrix_Rotate_Y(g_ChickenWeapon.rotation.y)
-                                  * Matrix_Rotate_Z(g_ChickenWeapon.rotation.z)
-                                  * Matrix_Scale(g_ChickenWeapon.scale.x, 
-                                                g_ChickenWeapon.scale.y, 
-                                                g_ChickenWeapon.scale.z);
-            
-            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(weaponModel));
-            glUniform1i(g_object_id_uniform, MODEL_THOMPSON_GUN);
-            
-            // Desenha todas as partes da Thompson
-            DrawVirtualObject("stock_Cube.010");
-            DrawVirtualObject("M1A1_Cube.019");
-            DrawVirtualObject("bolt_Cube.029");
-            DrawVirtualObject("mag_Cube.030");
-            DrawVirtualObject("magRelease_Plane.003");
-            DrawVirtualObject("fireSelect_Cylinder.019");
-            DrawVirtualObject("trigger_Cube.031");
-            DrawVirtualObject("safety_Cylinder.025");
-        }
+        // Usa funcao reutilizavel para desenhar galinha + arma
+        DrawChickenWithWeapon(g_ChickenPhysics.position, g_ChickenWeapon.enabled);
+
+        // ===== DESENHA TODAS AS TORRES COLOCADAS NO MAPA =====
+        DrawAllTowers();
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1294,11 +1228,20 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {
-        // Se o usuário pressionou o botão esquerdo do mouse, guardamos a
-        // posição atual do cursor nas variáveis g_LastCursorPosX e
-        // g_LastCursorPosY.  Também, setamos a variável
-        // g_RightMouseButtonPressed como true, para saber que o usuário está
-        // com o botão esquerdo pressionado.
+        // CLIQUE DIREITO: Adiciona torre no grid
+        // Pega posicao do mouse
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        
+        // Converte posicao do mouse para grid (simples: usa camera position)
+        // Por enquanto, vamos usar a posicao da camera para determinar grid
+        glm::vec3 cameraPos = glm::vec3(g_CameraPosition.x, 0.0f, g_CameraPosition.z);
+        glm::ivec2 gridPos = WorldToGrid(cameraPos);
+        
+        // Tenta adicionar torre
+        AddTower(gridPos.x, gridPos.y);
+        
+        // Guarda estado do mouse
         glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
         g_RightMouseButtonPressed = true;
     }

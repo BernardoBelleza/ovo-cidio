@@ -43,17 +43,17 @@ static int g_ModelsLoaded = 0;
 static int g_ModelsFailed = 0;
 
 void LoadSingleModel(const char* filepath, const char* name) {
-    printf("  → %s", name);
+    printf("  -> %s", name);
     fflush(stdout);
     
     try {
         ObjModel* model = new ObjModel(filepath);
         ComputeNormals(model);
         BuildTrianglesAndAddToVirtualScene(model);
-        printf(" ✓\n");
+        printf(" OK\n");
         g_ModelsLoaded++;
     } catch (...) {
-        printf(" ✗ (arquivo não encontrado)\n");
+        printf(" ERRO (arquivo nao encontrado)\n");
         g_ModelsFailed++;
     }
 }
@@ -63,9 +63,9 @@ void LoadSingleModel(const char* filepath, const char* name) {
 // ============================================================================
 
 void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
-    printf("\n╔════════════════════════════════════════════════════╗\n");
-    printf("║     CARREGANDO MODELOS DO TOWER DEFENSE            ║\n");
-    printf("╚════════════════════════════════════════════════════╝\n");
+    printf("\n=======================================================\n");
+    printf("     CARREGANDO MODELOS DO TOWER DEFENSE\n");
+    printf("=======================================================\n");
     
     // ===== TORRES =====
     printf("\n[TORRES]\n");
@@ -79,8 +79,8 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     printf("\n[INIMIGOS]\n");
     
     
-    // ===== PROJÉTEIS =====
-    printf("\n[PROJÉTEIS]\n");
+    // ===== PROJETEIS =====
+    printf("\n[PROJETEIS]\n");
     
     
     // ===== AMBIENTE =====
@@ -88,15 +88,15 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     
     
     // ===== RESUMO =====
-    printf("\n╔════════════════════════════════════════════════════╗\n");
+    printf("\n=======================================================\n");
     if (g_ModelsFailed == 0) {
-        printf("║  ✓ Todos os modelos carregados! (%d/%d)          ║\n", 
+        printf("  OK: Todos os modelos carregados! (%d/%d)\n", 
                g_ModelsLoaded, g_ModelsLoaded + g_ModelsFailed);
     } else {
-        printf("║  ⚠ Carregados: %d | Falharam: %d                   ║\n", 
+        printf("  AVISO: Carregados: %d | Falharam: %d\n", 
                g_ModelsLoaded, g_ModelsFailed);
-        printf("║  (Arquivos faltando serão substituídos por        ║\n");
-        printf("║   placeholders: sphere/bunny)                     ║\n");
+        printf("  (Arquivos faltando serao substituidos por\n");
+        printf("   placeholders: sphere/bunny)\n");
     }
-    printf("╚════════════════════════════════════════════════════╝\n\n");
+    printf("=======================================================\n\n");
 }
