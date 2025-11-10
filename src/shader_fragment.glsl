@@ -27,6 +27,7 @@ uniform mat4 projection;
 #define CELL_BLOCKED_PLANE 12
 #define CELL_BASE_PLANE    13
 
+
 // Tower Defense Models
 #define MODEL_CHICKEN_TOWER 20
 #define MODEL_THOMPSON_GUN  25
@@ -45,6 +46,8 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -150,14 +153,14 @@ void main()
         // Célula vazia (verde claro) - pode colocar torre
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = vec3(0.4, 0.8, 0.4); // Verde claro
+        Kd0 = texture(TextureImage4, texcoords).rgb;
     }
     else if ( object_id == CELL_PATH_PLANE )
     {
         // Caminho (marrom/bege)
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = vec3(0.7, 0.6, 0.4); // Bege/marrom claro
+        Kd0 = texture(TextureImage5, texcoords).rgb;
     }
     else if ( object_id == CELL_BLOCKED_PLANE )
     {

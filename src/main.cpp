@@ -455,6 +455,11 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/textures/towers/Low Poly Chicken_v1_001_Diffuse.png"); // TextureImage2
     LoadTextureImage("../../data/textures/guns/m1a1_textures/M1A1 Submachine Gun_AlbedoSmoothness.png"); // TextureImage3
 
+
+    // Texturas do grid
+    LoadTextureImage("../../data/textures/grid/Grass005_1K-JPG_Color.jpg");       // TextureImage4 - Grama
+    LoadTextureImage("../../data/textures/grid/Ground082L_1K-JPG_Color.jpg");    // TextureImage5 - Caminho
+    
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
     ComputeNormals(&spheremodel);
@@ -805,6 +810,9 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
+
     glUseProgram(0);
 }
 
