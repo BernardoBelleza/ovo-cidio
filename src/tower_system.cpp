@@ -1,5 +1,6 @@
 #include "tower_system.h"
 #include "model_loader.h"
+#include "hud.h"
 #include <cstdio>
 #include <cmath>
 #include <glad/glad.h>
@@ -54,6 +55,7 @@ struct AttachedWeapon {
     bool enabled;
 };
 extern AttachedWeapon g_ChickenWeapon;
+extern AttachedWeapon g_BeagleWeapon;
 
 // ============================================================================
 // CONSTANTES FÍSICAS
@@ -63,6 +65,7 @@ const float GRAVITY = -9.8f;
 const float DAMPING = 0.6f;
 const float MIN_VELOCITY = 0.05f;
 const float CHICKEN_Y_OFFSET = -0.43f;
+const float BEAGLE_Y_OFFSET = 0.15f;
 
 // ============================================================================
 // VARIÁVEIS GLOBAIS DO SISTEMA DE TORRES
@@ -71,6 +74,11 @@ const float CHICKEN_Y_OFFSET = -0.43f;
 Tower g_Towers[MAX_TOWERS];
 int g_TowerCount = 0;
 int g_SelectedTowerIndex = -1;  // -1 = nenhuma torre selecionada
+
+// Sistema de compra
+bool g_ShowTowerMenu = false;
+int g_MenuGridX = -1;
+int g_MenuGridZ = -1;
 
 // ============================================================================
 // IMPLEMENTAÇÃO DAS FUNÇÕES
@@ -89,13 +97,15 @@ void InitializeTowers() {
         g_Towers[i].attackRange = 3.0f;   // 3 células de alcance
         g_Towers[i].attackDamage = 10.0f; // 10 de dano
         g_Towers[i].attackSpeed = 1.0f;   // 1 ataque por segundo
+        g_Towers[i].type = TOWER_CHICKEN; // Tipo padrão
     }
     g_TowerCount = 0;
     g_SelectedTowerIndex = -1;
+    g_ShowTowerMenu = false;
     printf("[TORRE] Sistema de torres inicializado (max: %d)\n", MAX_TOWERS);
 }
 
-bool AddTower(int gridX, int gridZ) {
+bool AddTower(int gridX, int gridZ, TowerType type) {
     if (g_TowerCount >= MAX_TOWERS) {
         printf("[TORRE] Limite maximo atingido!\n");
         return false;
@@ -112,13 +122,16 @@ bool AddTower(int gridX, int gridZ) {
     // Converte posicao do grid para world
     glm::vec3 worldPos = GridToWorld(gridX, gridZ);
     
+    // Pega a altura do terreno nessa posição
+    float groundHeight = GetGroundHeight(gridX, gridZ);
+    
     // Adiciona nova torre
     g_Towers[g_TowerCount].gridX = gridX;
     g_Towers[g_TowerCount].gridZ = gridZ;
     g_Towers[g_TowerCount].active = true;
     
-    // Inicializa fisica da torre (spawna 3 blocos acima do chao)
-    g_Towers[g_TowerCount].physics.position = glm::vec3(worldPos.x, worldPos.y + 3.0f, worldPos.z);
+    // Inicializa fisica da torre (spawna 3 blocos acima do chao para cair)
+    g_Towers[g_TowerCount].physics.position = glm::vec3(worldPos.x, groundHeight + 3.0f, worldPos.z);
     g_Towers[g_TowerCount].physics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
     g_Towers[g_TowerCount].physics.mass = 1.0f;
     g_Towers[g_TowerCount].physics.radius = 0.3f;
@@ -128,11 +141,13 @@ bool AddTower(int gridX, int gridZ) {
     g_Towers[g_TowerCount].attackRange = 3.0f;
     g_Towers[g_TowerCount].attackDamage = 10.0f;
     g_Towers[g_TowerCount].attackSpeed = 1.0f;
+    g_Towers[g_TowerCount].type = type;
     
     g_TowerCount++;
     
-    printf("[TORRE] Torre adicionada em (%d, %d) - Total: %d/%d\n", 
-           gridX, gridZ, g_TowerCount, MAX_TOWERS);
+    const char* typeName = (type == TOWER_CHICKEN) ? "Galinha" : "Beagle";
+    printf("[TORRE] Torre %s adicionada em (%d, %d) - Total: %d/%d\n", 
+           typeName, gridX, gridZ, g_TowerCount, MAX_TOWERS);
     return true;
 }
 
@@ -183,7 +198,7 @@ void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon) {
     
     // Matriz de transformação da galinha
     glm::mat4 chickenModel = Matrix_Translate(position.x, position.y, position.z)
-                           * Matrix_Scale(0.1f, 0.1f, 0.1f)
+                           * Matrix_Scale(0.05f, 0.05f, 0.05f)
                            * Matrix_Rotate_Y(3.14159f / 2);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(chickenModel));
@@ -219,13 +234,51 @@ void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon) {
     }
 }
 
+void DrawBeagleWithWeapon(glm::vec3 position, bool drawWeapon) {
+    // Aplica offset Y para ajustar a base do modelo (ajuste conforme necessário)
+    position.y += BEAGLE_Y_OFFSET;
+    
+    // Matriz de transformação do beagle
+    glm::mat4 beagleModel = Matrix_Translate(position.x, position.y, position.z)
+                          * Matrix_Scale(0.01f, 0.01f, 0.01f); // Escala (ajuste se necessário)
+    
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(beagleModel));
+    glUniform1i(g_object_id_uniform, MODEL_BEAGLE_TOWER);
+    DrawVirtualObject("Geo_Beagle"); // Nome correto do objeto no arquivo OBJ
+    
+    // Desenha a AK47 se estiver habilitada
+    if (drawWeapon && g_BeagleWeapon.enabled) {
+        // Matriz de transformação da AK47 (aplicada à matriz do beagle)
+        glm::mat4 weaponModel = beagleModel
+                              * Matrix_Translate(g_BeagleWeapon.offset.x, 
+                                                g_BeagleWeapon.offset.y, 
+                                                g_BeagleWeapon.offset.z)
+                              * Matrix_Rotate_X(g_BeagleWeapon.rotation.x)
+                              * Matrix_Rotate_Y(g_BeagleWeapon.rotation.y)
+                              * Matrix_Rotate_Z(g_BeagleWeapon.rotation.z)
+                              * Matrix_Scale(g_BeagleWeapon.scale.x, 
+                                            g_BeagleWeapon.scale.y, 
+                                            g_BeagleWeapon.scale.z);
+        
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(weaponModel));
+        glUniform1i(g_object_id_uniform, MODEL_AK47);
+        
+        // Desenha a AK47
+        DrawVirtualObject("Box003");
+    }
+}
+
 void DrawAllTowers() {
     for (int i = 0; i < g_TowerCount; i++) {
         if (!g_Towers[i].active)
             continue;
         
-        // Usa a posicao da fisica (com gravidade aplicada)
-        DrawChickenWithWeapon(g_Towers[i].physics.position, true);
+        // Desenha a torre de acordo com seu tipo
+        if (g_Towers[i].type == TOWER_CHICKEN) {
+            DrawChickenWithWeapon(g_Towers[i].physics.position, true);
+        } else if (g_Towers[i].type == TOWER_BEAGLE) {
+            DrawBeagleWithWeapon(g_Towers[i].physics.position, true);
+        }
     }
 }
 
@@ -303,5 +356,65 @@ void ShowTowerInfo(int towerIndex) {
     printf("Dano: %.1f\n", tower.attackDamage);
     printf("Velocidade Ataque: %.1f atk/s\n", tower.attackSpeed);
     printf("No chao: %s\n", tower.physics.onGround ? "Sim" : "Nao");
+    printf("Tipo: %s\n", tower.type == TOWER_CHICKEN ? "Galinha" : "Beagle");
     printf("===============================\n\n");
+}
+
+// ============================================================================
+// SISTEMA DE COMPRA DE TORRES
+// ============================================================================
+
+void OpenTowerMenu(int gridX, int gridZ) {
+    if (!CanPlaceTower(gridX, gridZ)) {
+        AddConsoleMessage("[ERRO] Nao pode colocar torre aqui!");
+        return;
+    }
+    
+    g_ShowTowerMenu = true;
+    g_MenuGridX = gridX;
+    g_MenuGridZ = gridZ;
+    
+    AddConsoleMessage("=== MENU DE TORRES ===");
+    AddConsoleMessage("[1] Galinha ($100) | [2] Beagle ($150)");
+    AddConsoleMessage("Pressione 1 ou 2 para comprar, ESC para cancelar");
+}
+
+void CloseTowerMenu() {
+    g_ShowTowerMenu = false;
+    g_MenuGridX = -1;
+    g_MenuGridZ = -1;
+}
+
+void BuyTower(TowerType type) {
+    if (!g_ShowTowerMenu) {
+        AddConsoleMessage("[ERRO] Menu nao esta aberto!");
+        return;
+    }
+    
+    const char* typeName = (type == TOWER_CHICKEN) ? "Galinha" : "Beagle";
+    int cost = (type == TOWER_CHICKEN) ? 100 : 150;
+    
+    // Verificar se tem dinheiro suficiente
+    if (!SpendMoney(cost)) {
+        AddConsoleMessage("[ERRO] Dinheiro insuficiente!");
+        return;
+    }
+    
+    // Tentar adicionar a torre
+    if (AddTower(g_MenuGridX, g_MenuGridZ, type)) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "Torre %s comprada! (-$%d)", typeName, cost);
+        AddConsoleMessage(msg);
+        CloseTowerMenu();
+    } else {
+        // Devolver o dinheiro se falhou
+        AddMoney(cost);
+        AddConsoleMessage("[ERRO] Falha ao comprar torre!");
+    }
+}
+
+void ShowTowerMenuOnScreen() {
+    // Esta função será chamada no loop de renderização
+    // Por enquanto, o menu é mostrado no console
+    // No futuro, pode ser implementado um menu visual na tela
 }

@@ -50,6 +50,7 @@
 #include "model_loader.h"
 #include "game_attributes.h"
 #include "tower_system.h"
+#include "hud.h"
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -196,6 +197,12 @@ bool g_LeftMouseButtonPressed = false;
 bool g_RightMouseButtonPressed = false; // Análogo para botão direito do mouse
 bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mouse
 
+// Detecção de clique duplo
+double g_LastClickTime = 0.0;
+int g_LastClickGridX = -1;
+int g_LastClickGridZ = -1;
+const double DOUBLE_CLICK_TIME = 0.5; // 500ms para clique duplo
+
 // Variáveis que definem a câmera em coordenadas esféricas, controladas pelo
 // usuário através do mouse (veja função CursorPosCallback()). A posição
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
@@ -248,6 +255,14 @@ AttachedWeapon g_ChickenWeapon = {
     glm::vec3(-1.60f, 9.00f, 2.60f), // offset (X, Y, Z) - posição ajustada
     glm::vec3(0.0f, 0.0f, 0.0f),     // rotation
     glm::vec3(14.0f, 14.0f, 14.0f),     // scale
+    true                              // enabled
+};
+
+// Arma equipada no beagle (AK47)
+AttachedWeapon g_BeagleWeapon = {
+    glm::vec3(-1.60f, 9.00f, 2.60f),     // offset (ajustar conforme necessário)
+    glm::vec3(0.0f, 1.45f, 0.0f),     // rotation
+    glm::vec3(0.2f, 0.2f, 0.2f),     // scale
     true                              // enabled
 };
 
@@ -447,27 +462,33 @@ int main(int argc, char* argv[])
     // Inicializa o grid do mapa (Tower Defense)
     InitializeMap();
 
-    // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
-    LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    // Inicializa o HUD (dinheiro e mensagens)
+    InitializeHUD();
+
+    // Carregamos as texturas do jogo
+    // Reutilizando TextureImage0 e TextureImage1 para grama e caminho
+    LoadTextureImage("../../data/textures/grid/Grass005_1K-JPG_Color.jpg");       // TextureImage0 - Grama
+    LoadTextureImage("../../data/textures/grid/Ground082L_1K-JPG_Color.jpg");    // TextureImage1 - Caminho
     
     // ===== TEXTURAS DO TOWER DEFENSE =====
     LoadTextureImage("../../data/textures/towers/Low Poly Chicken_v1_001_Diffuse.png"); // TextureImage2
     LoadTextureImage("../../data/textures/guns/m1a1_textures/M1A1 Submachine Gun_AlbedoSmoothness.png"); // TextureImage3
+    LoadTextureImage("../../data/textures/towers/Tex_Beagle.png"); // TextureImage4
+    LoadTextureImage("../../data/textures/guns/ak472texture/ak47texture.jpg"); // TextureImage5
 
 
-    // Texturas do grid
-    LoadTextureImage("../../data/textures/grid/Grass005_1K-JPG_Color.jpg");       // TextureImage4 - Grama
-    LoadTextureImage("../../data/textures/grid/Ground082L_1K-JPG_Color.jpg");    // TextureImage5 - Caminho
+    // Texturas do grid (repetidas nos slots 6 e 7 para o shader)
+    LoadTextureImage("../../data/textures/grid/Grass005_1K-JPG_Color.jpg");       // TextureImage6 - Grama
+    LoadTextureImage("../../data/textures/grid/Ground082L_1K-JPG_Color.jpg");    // TextureImage7 - Caminho
     
-    // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/sphere.obj");
-    ComputeNormals(&spheremodel);
-    BuildTrianglesAndAddToVirtualScene(&spheremodel);
+    // // Construímos a representação de objetos geométricos através de malhas de triângulos
+    // ObjModel spheremodel("../../data/sphere.obj");
+    // ComputeNormals(&spheremodel);
+    // BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("../../data/bunny.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
+    // ObjModel bunnymodel("../../data/bunny.obj");
+    // ComputeNormals(&bunnymodel);
+    // BuildTrianglesAndAddToVirtualScene(&bunnymodel);
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -610,25 +631,10 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        #define SPHERE 0
-        #define BUNNY  1
+        // #define SPHERE 0
+        // #define BUNNY  1
         #define PLANE  2
 
-        // Desenhamos o modelo da esfera
-        // model = Matrix_Translate(-1.0f,0.0f,0.0f)
-        //       * Matrix_Rotate_Z(0.6f)
-        //       * Matrix_Rotate_X(0.2f)
-        //       * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        // glUniform1i(g_object_id_uniform, SPHERE);
-        // DrawVirtualObject("the_sphere");
-
-        // // Desenhamos o modelo do coelho
-        // model = Matrix_Translate(1.0f,0.0f,0.0f)
-        //       * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-        // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        // glUniform1i(g_object_id_uniform, BUNNY);
-        // DrawVirtualObject("the_bunny");
 
         // Desenhamos o grid do mapa (Tower Defense)
         DrawMapGrid();
@@ -636,7 +642,9 @@ int main(int argc, char* argv[])
         // ===== CHICKEN TOWER com física/gravidade =====
         // Usa funcao reutilizavel para desenhar galinha + arma
         DrawChickenWithWeapon(g_ChickenPhysics.position, g_ChickenWeapon.enabled);
-
+        
+        // Desenhar beagle na posição (0, 0, 0) com arma
+        DrawBeagleWithWeapon(glm::vec3(0.0f, 0.0f, 0.0f), true);
         // ===== DESENHA TODAS AS TORRES COLOCADAS NO MAPA =====
         DrawAllTowers();
         
@@ -653,6 +661,11 @@ int main(int argc, char* argv[])
         // Imprimimos na tela informação sobre o número de quadros renderizados
         // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
+
+        // Renderiza o HUD (dinheiro e mensagens do console)
+        int screenWidth, screenHeight;
+        glfwGetWindowSize(window, &screenWidth, &screenHeight);
+        RenderHUD(window, screenWidth, screenHeight);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -813,6 +826,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
 
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
     glUseProgram(0);
 }
 
@@ -1284,22 +1299,43 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        // CLIQUE ESQUERDO: Seleciona torre
+        // CLIQUE ESQUERDO: Seleciona torre OU abre menu de compra (duplo clique)
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         
         // Usa raycast para encontrar célula do grid
         int gridX, gridZ;
         if (GetGridPositionFromMouse(window, xpos, ypos, gridX, gridZ)) {
-            // Tenta selecionar torre nessa posição
-            int towerIndex = SelectTowerAtPosition(gridX, gridZ);
-            if (towerIndex >= 0) {
-                g_SelectedTowerIndex = towerIndex;
-                ShowTowerInfo(towerIndex);
-                printf("[SELECAO] Torre #%d selecionada\n", towerIndex + 1);
+            double currentTime = glfwGetTime();
+            double timeSinceLastClick = currentTime - g_LastClickTime;
+            
+            // Verifica se é clique duplo na mesma posição
+            if (timeSinceLastClick < DOUBLE_CLICK_TIME && 
+                gridX == g_LastClickGridX && gridZ == g_LastClickGridZ) {
+                // CLIQUE DUPLO: Abre menu de compra
+                printf("[INPUT] Clique duplo detectado em (%d, %d)\n", gridX, gridZ);
+                OpenTowerMenu(gridX, gridZ);
+                
+                // Reset para evitar triplo clique
+                g_LastClickTime = 0.0;
+                g_LastClickGridX = -1;
+                g_LastClickGridZ = -1;
             } else {
-                g_SelectedTowerIndex = -1;
-                printf("[SELECAO] Nenhuma torre nessa posicao\n");
+                // CLIQUE SIMPLES: Seleciona torre
+                int towerIndex = SelectTowerAtPosition(gridX, gridZ);
+                if (towerIndex >= 0) {
+                    g_SelectedTowerIndex = towerIndex;
+                    ShowTowerInfo(towerIndex);
+                    printf("[SELECAO] Torre #%d selecionada\n", towerIndex + 1);
+                } else {
+                    g_SelectedTowerIndex = -1;
+                    printf("[SELECAO] Nenhuma torre nessa posicao\n");
+                }
+                
+                // Salva tempo e posição do clique
+                g_LastClickTime = currentTime;
+                g_LastClickGridX = gridX;
+                g_LastClickGridZ = gridZ;
             }
         }
         
@@ -1315,22 +1351,12 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {
-        // CLIQUE DIREITO: Adiciona torre onde o mouse clicou
-        double xpos, ypos;
-        glfwGetCursorPos(window, &xpos, &ypos);
-        
-        // Usa raycast para encontrar célula do grid
-        int gridX, gridZ;
-        if (GetGridPositionFromMouse(window, xpos, ypos, gridX, gridZ)) {
-            // Verifica se pode colocar torre (célula vazia = 0)
-            if (CanPlaceTower(gridX, gridZ)) {
-                AddTower(gridX, gridZ);
-                printf("[GRID] Torre colocada em (%d, %d)\n", gridX, gridZ);
-            } else {
-                printf("[GRID] Celula (%d, %d) bloqueada\n", gridX, gridZ);
-            }
+        // BOTÃO DIREITO: Desseleciona torre ou fecha menu
+        if (g_ShowTowerMenu) {
+            CloseTowerMenu();
         } else {
-            printf("[GRID] Clique fora do mapa\n");
+            g_SelectedTowerIndex = -1;
+            printf("[SELECAO] Torre desselecionada\n");
         }
         
         // Guarda estado do mouse
@@ -1478,7 +1504,29 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+    {
+        // Se o menu de compra estiver aberto, fecha ele
+        if (g_ShowTowerMenu) {
+            CloseTowerMenu();
+        } else {
+            glfwSetWindowShouldClose(window, GL_TRUE);
+        }
+    }
+
+    // Sistema de compra de torres
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+    {
+        if (g_ShowTowerMenu) {
+            BuyTower(TOWER_CHICKEN);
+        }
+    }
+    
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+    {
+        if (g_ShowTowerMenu) {
+            BuyTower(TOWER_BEAGLE);
+        }
+    }
 
     // O código abaixo implementa a seguinte lógica:
     //   Se apertar tecla X       então g_AngleX += delta;
@@ -1569,27 +1617,27 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     bool weapon_adjusted = false;
     
     if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_ChickenWeapon.offset.y += offset_step;  // Cima
+        g_BeagleWeapon.offset.y += offset_step;  // Cima
         weapon_adjusted = true;
     }
     if (key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_ChickenWeapon.offset.y -= offset_step;  // Baixo
+        g_BeagleWeapon.offset.y -= offset_step;  // Baixo
         weapon_adjusted = true;
     }
     if (key == GLFW_KEY_J && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_ChickenWeapon.offset.x -= offset_step;  // Esquerda
+        g_BeagleWeapon.offset.x -= offset_step;  // Esquerda
         weapon_adjusted = true;
     }
     if (key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_ChickenWeapon.offset.x += offset_step;  // Direita
+        g_BeagleWeapon.offset.x += offset_step;  // Direita
         weapon_adjusted = true;
     }
     if (key == GLFW_KEY_U && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_ChickenWeapon.offset.z += offset_step;  // Frente
+        g_BeagleWeapon.offset.z += offset_step;  // Frente
         weapon_adjusted = true;
     }
     if (key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_ChickenWeapon.offset.z -= offset_step;  // Trás
+        g_BeagleWeapon.offset.z -= offset_step;  // Trás
         weapon_adjusted = true;
     }
     
