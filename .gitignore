@@ -1,6 +1,3 @@
 # Build directories
 build/
 bin/
-
-# IDE files
-.vscode/
