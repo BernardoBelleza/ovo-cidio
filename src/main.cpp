@@ -50,6 +50,7 @@
 #include "model_loader.h"
 #include "game_attributes.h"
 #include "tower_system.h"
+#include "chicken_coop_system.h"
 #include "hud.h"
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
@@ -309,8 +310,8 @@ void InitializeMap() {
         {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
         {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
         {2,0,0,0,0,0,0,0,0,0,0,1,0,0,2},
-        {2,0,0,0,0,0,0,0,0,0,0,1,1,3,2},
-        {2,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,1,1,0,2},
+        {2,0,0,0,0,0,0,0,0,0,0,0,1,3,2},
         {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2}
     };
     
@@ -461,6 +462,16 @@ int main(int argc, char* argv[])
 
     // Inicializa o grid do mapa (Tower Defense)
     InitializeMap();
+
+    // Inicializa galinheiros e posiciona a base onde houver células CELL_BASE
+    InitializeChickenCoops();
+    for (int z = 0; z < MAP_HEIGHT; ++z) {
+        for (int x = 0; x < MAP_WIDTH; ++x) {
+            if (g_MapGrid[z][x] == CELL_BASE) {
+                AddChickenCoop(x, z);
+            }
+        }
+    }
 
     // Inicializa o HUD (dinheiro e mensagens)
     InitializeHUD();
@@ -647,6 +658,9 @@ int main(int argc, char* argv[])
         DrawBeagleWithWeapon(glm::vec3(0.0f, 0.0f, 0.0f), true);
         // ===== DESENHA TODAS AS TORRES COLOCADAS NO MAPA =====
         DrawAllTowers();
+
+    // ===== DESENHA GALINHEIROS (BASES) =====
+    DrawChickenCoops();
         
         // ===== DESENHA CÍRCULO DE ALCANCE DA TORRE SELECIONADA =====
         DrawTowerRangeCircle();

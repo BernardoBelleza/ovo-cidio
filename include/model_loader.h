@@ -32,6 +32,8 @@ struct SceneObject;
 
 // Ambiente
 
+#define MODEL_CHICKEN_COOP   40
+
 
 // Grid (já definidos no shader)
 

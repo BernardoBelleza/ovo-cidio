@@ -33,6 +33,7 @@ uniform mat4 projection;
 #define MODEL_BEAGLE_TOWER  21
 #define MODEL_THOMPSON_GUN  25
 #define MODEL_AK47          26
+#define MODEL_CHICKEN_COOP  40
 
 // Tower Range Circle
 #define TOWER_RANGE_CIRCLE  99
@@ -165,6 +166,13 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage5, vec2(U, V)).rgb;
+    }
+    else if ( object_id == MODEL_CHICKEN_COOP )
+    {
+        // Galinheiro - madeira clara
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = vec3(0.7, 0.55, 0.35);
     }
     else if ( object_id == CELL_EMPTY_PLANE )
     {

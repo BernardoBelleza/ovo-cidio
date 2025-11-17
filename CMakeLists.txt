@@ -14,6 +14,7 @@ set(SOURCES
   src/model_loader.cpp
   src/tower_system.cpp
   src/hud.cpp
+  src/chicken_coop_system.cpp
 )
 
 cmake_minimum_required(VERSION 3.5.0)

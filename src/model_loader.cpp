@@ -87,6 +87,7 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     
     // ===== AMBIENTE =====
     printf("\n[AMBIENTE]\n");
+    LoadSingleModel("../../data/models/environment/ChickenCoop.obj", "ChickenCoop");
     
     
     // ===== RESUMO =====
