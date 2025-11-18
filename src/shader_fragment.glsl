@@ -51,8 +51,6 @@ uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
 uniform sampler2D TextureImage5;
-uniform sampler2D TextureImage6;
-uniform sampler2D TextureImage7;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -141,71 +139,61 @@ void main()
     }
     else if ( object_id == MODEL_CHICKEN_TOWER )
     {
-        // Torre de galinha - usa textura
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_THOMPSON_GUN )
     {
-        // Arma Thompson - usa textura
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage3, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_BEAGLE_TOWER )
     {
-        // Torre Beagle - usa textura
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage4, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_AK47 )
     {
-        // AK47 - usa textura
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage5, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_CHICKEN_COOP )
     {
-        // Galinheiro - madeira clara
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = vec3(0.7, 0.55, 0.35);
+        Kd0 = vec3(0.7, 0.55, 0.35); // Madeira clara
     }
     else if ( object_id == CELL_EMPTY_PLANE )
     {
-        // Célula vazia (verde claro) - pode colocar torre
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage6, texcoords).rgb;
+        Kd0 = texture(TextureImage0, texcoords).rgb;
     }
     else if ( object_id == CELL_PATH_PLANE )
     {
-        // Caminho (marrom/bege)
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage7, texcoords).rgb;
+        Kd0 = texture(TextureImage1, texcoords).rgb;
     }
     else if ( object_id == CELL_BLOCKED_PLANE )
     {
-        // Bloqueado (cinza escuro)
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = vec3(0.3, 0.3, 0.3); // Cinza escuro
     }
     else if ( object_id == CELL_BASE_PLANE )
     {
-        // Base (azul)
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = vec3(0.2, 0.4, 0.9); // Azul
     }
     else if ( object_id == TOWER_RANGE_CIRCLE )
     {
-        // Círculo de alcance da torre (amarelo brilhante)
-        Kd0 = vec3(1.0, 1.0, 0.0); // Amarelo puro
+        Kd0 = vec3(1.0, 1.0, 0.0); // Amarelo
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
