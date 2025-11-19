@@ -19,9 +19,6 @@ uniform mat4 view;
 uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
-#define SPHERE 0
-#define BUNNY  1
-#define PLANE  2
 #define CELL_EMPTY_PLANE   10
 #define CELL_PATH_PLANE    11
 #define CELL_BLOCKED_PLANE 12
@@ -45,12 +42,12 @@ uniform vec4 bbox_min;
 uniform vec4 bbox_max;
 
 // Variáveis para acesso das imagens de textura
-uniform sampler2D TextureImage0;
-uniform sampler2D TextureImage1;
-uniform sampler2D TextureImage2;
-uniform sampler2D TextureImage3;
-uniform sampler2D TextureImage4;
-uniform sampler2D TextureImage5;
+uniform sampler2D texture_grass;
+uniform sampler2D texture_path;
+uniform sampler2D texture_chicken;
+uniform sampler2D texture_thompson;
+uniform sampler2D texture_beagle;
+uniform sampler2D texture_ak47;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -88,78 +85,29 @@ void main()
     float V = 0.0;
     vec3 Kd0 = vec3(0.5, 0.5, 0.5); // Cor padrão
 
-    if ( object_id == SPHERE )
-    {
-        // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
-        // projeção esférica EM COORDENADAS DO MODELO. Utilize como referência
-        // o slides 134-150 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // A esfera que define a projeção deve estar centrada na posição
-        // "bbox_center" definida abaixo.
-
-        // Você deve utilizar:
-        //   função 'length( )' : comprimento Euclidiano de um vetor
-        //   função 'atan( , )' : arcotangente. Veja https://en.wikipedia.org/wiki/Atan2.
-        //   função 'asin( )'   : seno inverso.
-        //   constante M_PI
-        //   variável position_model
-
-        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
-
-        U = 0.0;
-        V = 0.0;
-    }
-    else if ( object_id == BUNNY )
-    {
-        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
-        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
-        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
-        // e também use as variáveis min*/max* definidas abaixo para normalizar
-        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
-        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
-        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // Veja também a Questão 4 do Questionário 4 no Moodle.
-
-        float minx = bbox_min.x;
-        float maxx = bbox_max.x;
-
-        float miny = bbox_min.y;
-        float maxy = bbox_max.y;
-
-        float minz = bbox_min.z;
-        float maxz = bbox_max.z;
-
-        U = 0.0;
-        V = 0.0;
-    }
-    else if ( object_id == PLANE )
-    {
-        // Coordenadas de textura do plano, obtidas do arquivo OBJ.
-        U = texcoords.x;
-        V = texcoords.y;
-    }
-    else if ( object_id == MODEL_CHICKEN_TOWER )
+    if ( object_id == MODEL_CHICKEN_TOWER )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
+        Kd0 = texture(texture_chicken, vec2(U, V)).rgb;  // Aplica textura da galinha
     }
     else if ( object_id == MODEL_THOMPSON_GUN )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage3, vec2(U, V)).rgb;
+        Kd0 = texture(texture_thompson, vec2(U, V)).rgb;  // Aplica textura da Thompson
     }
     else if ( object_id == MODEL_BEAGLE_TOWER )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage4, vec2(U, V)).rgb;
+        Kd0 = texture(texture_beagle, vec2(U, V)).rgb;  // Aplica textura do beagle
     }
     else if ( object_id == MODEL_AK47 )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage5, vec2(U, V)).rgb;
+        Kd0 = texture(texture_ak47, vec2(U, V)).rgb;  // Aplica textura do AK47
     }
     else if ( object_id == MODEL_CHICKEN_COOP )
     {
@@ -171,13 +119,13 @@ void main()
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage0, texcoords).rgb;
+        Kd0 = texture(texture_grass, texcoords).rgb;  // Aplica textura de grama
     }
     else if ( object_id == CELL_PATH_PLANE )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage1, texcoords).rgb;
+        Kd0 = texture(texture_path, texcoords).rgb;  // Aplica textura de caminho
     }
     else if ( object_id == CELL_BLOCKED_PLANE )
     {
@@ -195,10 +143,6 @@ void main()
     {
         Kd0 = vec3(1.0, 1.0, 0.0); // Amarelo
     }
-
-    // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    if (object_id == SPHERE || object_id == BUNNY || object_id == PLANE)
-        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));

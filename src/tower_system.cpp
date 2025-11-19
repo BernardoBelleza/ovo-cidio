@@ -199,7 +199,7 @@ void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon) {
     // Matriz de transformação da galinha
     glm::mat4 chickenModel = Matrix_Translate(position.x, position.y, position.z)
                            * Matrix_Scale(0.05f, 0.05f, 0.05f)
-                           * Matrix_Rotate_Y(3.14159f / 2);
+                           * Matrix_Rotate_Y(M_PI_2);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(chickenModel));
     glUniform1i(g_object_id_uniform, MODEL_CHICKEN_TOWER);
@@ -320,8 +320,8 @@ void DrawTowerRangeCircle() {
     
     // Desenha várias linhas radiais formando um círculo
     for (int i = 0; i < segments; i++) {
-        float angle1 = 2.0f * 3.14159f * i / segments;
-        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
+        float angle1 = 2.0f * M_PI * i / segments;
+        float angle2 = 2.0f * M_PI * (i + 1) / segments;
         
         glm::vec3 p1 = center + glm::vec3(range * cos(angle1), 0.0f, range * sin(angle1));
         glm::vec3 p2 = center + glm::vec3(range * cos(angle2), 0.0f, range * sin(angle2));

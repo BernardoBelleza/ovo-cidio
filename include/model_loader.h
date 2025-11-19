@@ -11,10 +11,11 @@ struct SceneObject;
 // IDs DOS MODELOS (para usar com glUniform1i)
 // ============================================================================
 
-// Modelos existentes
-#define MODEL_SPHERE 0
-#define MODEL_BUNNY  1
-#define MODEL_PLANE  2
+// Planos do grid
+#define CELL_EMPTY_PLANE   10
+#define CELL_PATH_PLANE    11
+#define CELL_BLOCKED_PLANE 12
+#define CELL_BASE_PLANE    13
 
 // Torres
 #define MODEL_CHICKEN_TOWER  20

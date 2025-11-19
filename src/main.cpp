@@ -172,15 +172,15 @@ const double DOUBLE_CLICK_TIME = 0.5; // 500ms para clique duplo
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
 float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
-float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
-float g_CameraDistance = 3.5f; // Distância da câmera para a origem
+float g_CameraPhi = 0.5f;   // Ângulo em relação ao eixo Y
+float g_CameraDistance = 15.0f; // Distância da câmera para a origem
 
 // Variáveis da câmera livre (WASD)
 bool g_UseFreeCamera = false; // true = câmera livre, false = câmera look-at
 glm::vec4 g_CameraPosition = glm::vec4(0.0f, 2.0f, 5.0f, 1.0f);
 glm::vec4 g_CameraView = glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
 float g_CameraPhi_Free = 0.0f;
-float g_CameraTheta_Free = 3.14159f; // Começa olhando para -Z
+float g_CameraTheta_Free = M_PI; // Começa olhando para -Z
 
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
@@ -201,13 +201,22 @@ GLuint g_NumLoadedTextures = 0;
 // SISTEMA DE FÍSICA (GRAVIDADE)
 // ============================================================================
 
-// Objeto de física do chicken tower (teste)
+// Objeto de física do chicken tower (testes)
 PhysicsObject g_ChickenPhysics = {
-    glm::vec3(0.0f, 5.0f, 0.0f), // position (vai ser atualizada depois)
-    glm::vec3(0.0f, 0.0f, 0.0f), // velocity
-    1.0f,                         // mass
-    0.3f,                         // radius (tamanho do objeto)
-    false                         // onGround
+    glm::vec3(0.0f, 5.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    1.0f,
+    0.3f,
+    false
+};
+
+// Objeto de física do beagle tower (testes)
+PhysicsObject g_BeaglePhysics = {
+    glm::vec3(0.0f, 5.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    1.0f,
+    0.3f,
+    false
 };
 
 // ============================================================================
@@ -409,12 +418,12 @@ int main(int argc, char* argv[])
     InitializeHUD();
 
     // Carregamos as imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/textures/grid/Grass005_1K-JPG_Color.jpg");       // TextureImage0 - Grama
-    LoadTextureImage("../../data/textures/grid/Ground082L_1K-JPG_Color.jpg");    // TextureImage1 - Caminho
-    LoadTextureImage("../../data/textures/towers/Low Poly Chicken_v1_001_Diffuse.png"); // TextureImage2
-    LoadTextureImage("../../data/textures/guns/m1a1_textures/M1A1 Submachine Gun_AlbedoSmoothness.png"); // TextureImage3
-    LoadTextureImage("../../data/textures/towers/Tex_Beagle.png"); // TextureImage4
-    LoadTextureImage("../../data/textures/guns/ak472texture/ak47texture.jpg"); // TextureImage5
+    LoadTextureImage("../../data/textures/grid/grass.jpg");
+    LoadTextureImage("../../data/textures/grid/path.jpg");
+    LoadTextureImage("../../data/textures/towers/chicken.png");
+    LoadTextureImage("../../data/textures/guns/m1a1/thompson.png");
+    LoadTextureImage("../../data/textures/towers/beagle.png");
+    LoadTextureImage("../../data/textures/guns/ak47/ak47.jpg");
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -426,11 +435,17 @@ int main(int argc, char* argv[])
     // Inicializa sistema de torres
     InitializeTowers();
     
-    // Inicializa posição da física do chicken (teste)
+    // Inicializa posição da física do chicken (testes)
     int chickenGridX = 6;
     int chickenGridZ = 6;
     glm::vec3 chickenWorldPos = GridToWorld(chickenGridX, chickenGridZ);
-    g_ChickenPhysics.position = glm::vec3(chickenWorldPos.x, 5.0f, chickenWorldPos.z); // Começa 5 unidades acima
+    g_ChickenPhysics.position = glm::vec3(chickenWorldPos.x, 5.0f, chickenWorldPos.z);
+
+    // Inicializa posição da física do beagle (testes)
+    int beagleGridX = 11;
+    int beagleGridZ = 6;
+    glm::vec3 beagleWorldPos = GridToWorld(beagleGridX, beagleGridZ);
+    g_BeaglePhysics.position = glm::vec3(beagleWorldPos.x, 5.0f, beagleWorldPos.z);
 
     if ( argc > 1 )
     {
@@ -463,6 +478,7 @@ int main(int argc, char* argv[])
         prevTime = currentTime;
         
         UpdatePhysics(g_ChickenPhysics, deltaTime);
+        UpdatePhysics(g_BeaglePhysics, deltaTime);
         UpdateAllTowersPhysics(deltaTime);
         
         // Aqui executamos as operações de renderização
@@ -527,7 +543,7 @@ int main(int argc, char* argv[])
 
         // Projeção Perspectiva.
         // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
-        float field_of_view = 3.141592 / 3.0f;
+        float field_of_view = M_PI / 3.0f;
         projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
 
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
@@ -538,15 +554,12 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        #define PLANE  2
-
-
         // Desenhamos o grid do mapa (Tower Defense)
         DrawMapGrid();
 
         // Desenhamos torres iniciais para testes
         DrawChickenWithWeapon(g_ChickenPhysics.position, g_ChickenWeapon.enabled);
-        DrawBeagleWithWeapon(glm::vec3(0.0f, 0.0f, 0.0f), true);
+        DrawBeagleWithWeapon(g_BeaglePhysics.position, g_BeagleWeapon.enabled);
 
         // Desenhamos todos os objetos do jogo
         DrawAllTowers();
@@ -714,15 +727,12 @@ void LoadShadersFromFiles()
 
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
     glUseProgram(g_GpuProgramID);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
-
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_grass"), 0);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_path"), 1);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_chicken"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_thompson"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_beagle"), 4);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_ak47"), 5);
     glUseProgram(0);
 }
 
@@ -1124,7 +1134,7 @@ bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, 
     glm::vec4 rayClip = glm::vec4(x, y, -1.0f, 1.0f);
     
     // Converte para view space
-    float fov = 3.141592f / 3.0f;
+    float fov = M_PI / 3.0f;
     glm::mat4 proj = Matrix_Perspective(fov, g_ScreenRatio, -0.1f, -50.0f);
     glm::vec4 rayEye = glm::inverse(proj) * rayClip;
     rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
@@ -1166,7 +1176,7 @@ bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, 
     outGridX = grid.x;
     outGridZ = grid.y;
     
-    return (outGridX >= 0 && outGridX < 15 && outGridZ >= 0 && outGridZ < 15);
+    return (outGridX >= 0 && outGridX < MAP_WIDTH && outGridZ >= 0 && outGridZ < MAP_HEIGHT);
 }
 
 // Função callback chamada sempre que o usuário aperta algum dos botões do mouse
@@ -1285,7 +1295,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             g_CameraPhi_Free   -= 0.003f * dy;
             
             // Limita ângulo vertical
-            float phimax = 3.141592f/2.0f - 0.01f;
+            float phimax = M_PI_2 - 0.01f;
             float phimin = -phimax;
             
             if (g_CameraPhi_Free > phimax)
@@ -1299,7 +1309,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             g_CameraTheta -= 0.01f*dx;
             g_CameraPhi   += 0.01f*dy;
         
-            float phimax = 3.141592f/2;
+            float phimax = M_PI_2;
             float phimin = -phimax;
         
             if (g_CameraPhi > phimax)
@@ -1373,9 +1383,15 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // Tecla G: Reset da gravidade (testes)
     if (key == GLFW_KEY_G && action == GLFW_PRESS)
     {
-        g_ChickenPhysics.position.y = 5.0f; // Reseta para 5 unidades acima
-        g_ChickenPhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f); // Zera a velocidade
-        g_ChickenPhysics.onGround = false; // Marca que não está no chão
+        // Reseta posição e velocidade do chicken (testes)
+        g_ChickenPhysics.position.y = 5.0f;
+        g_ChickenPhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+        g_ChickenPhysics.onGround = false;
+
+        // Reseta posição e velocidade do beagle (testes)
+        g_BeaglePhysics.position.y = 5.0f;
+        g_BeaglePhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+        g_BeaglePhysics.onGround = false;
     }
     
     // Tecla T: Toggle arma (mostra/esconde)
@@ -1496,12 +1512,7 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
 // FUNÇÃO PARA DESENHAR O GRID DO MAPA
 // ============================================================================
 void DrawMapGrid()
-{
-    #define CELL_EMPTY_PLANE   10
-    #define CELL_PATH_PLANE    11
-    #define CELL_BLOCKED_PLANE 12
-    #define CELL_BASE_PLANE    13
-    
+{    
     for (int z = 0; z < MAP_HEIGHT; z++) {
         for (int x = 0; x < MAP_WIDTH; x++) {
             glm::vec3 worldPos = GridToWorld(x, z);
