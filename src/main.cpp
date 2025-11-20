@@ -422,6 +422,8 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/textures/guns/m1a1/thompson.png");
     LoadTextureImage("../../data/textures/towers/beagle.png");
     LoadTextureImage("../../data/textures/guns/ak47/ak47.jpg");
+    LoadTextureImage("../../data/textures/environment/ChickenCoop.png");
+
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -723,6 +725,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_thompson"), 3);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_beagle"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_ak47"), 5);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_chicken_coop"), 6);
+
     glUseProgram(0);
 }
 
@@ -1160,7 +1164,6 @@ bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, 
     
     outGridX = grid.x;
     outGridZ = grid.y;
-    printf("%d %d\n", outGridX, outGridZ);
     return (outGridX >= 0 && outGridX < MAP_WIDTH && outGridZ >= 0 && outGridZ < MAP_HEIGHT);
 }
 
