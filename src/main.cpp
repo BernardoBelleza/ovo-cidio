@@ -356,9 +356,9 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_SAMPLES, 4);
 
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
-    // de pixels, e com título "INF01047 ...".
+    // de pixels
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - Seu Cartao - Seu Nome", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "Ovocídio - O massacre da granja", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
