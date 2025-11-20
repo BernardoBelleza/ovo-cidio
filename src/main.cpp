@@ -176,12 +176,10 @@ float g_CameraPhi = 0.5f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 15.0f; // Distância da câmera para a origem
 
 // Variáveis da câmera livre (WASD)
-bool g_UseFreeCamera = false; // true = câmera livre, false = câmera look-at
-glm::vec4 g_CameraPosition = glm::vec4(0.0f, 2.0f, 5.0f, 1.0f);
+bool g_UseLookDownCamera = false; // true = câmera livre, false = câmera look-at
+glm::vec4 g_CameraLookDownPosition = glm::vec4(0.0f, 15.0f, 0.0f, 1.0f);
 glm::vec4 g_CameraView = glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
-float g_CameraPhi_Free = 0.0f;
-float g_CameraTheta_Free = M_PI; // Começa olhando para -Z
-
+glm::vec4 g_CameraUp = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
@@ -501,38 +499,30 @@ int main(int argc, char* argv[])
 
         // Definimos variáveis da câmera
         glm::vec4 camera_position_c;
-        glm::vec4 camera_view_vector;
-        glm::vec4 camera_up_vector = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
-        if (g_UseFreeCamera)
+        if (g_UseLookDownCamera)
         {
-            // ========== CÂMERA LIVRE ==========
-            // Atualiza o vetor view baseado nos ângulos
-            g_CameraView.x = cos(g_CameraPhi_Free) * sin(g_CameraTheta_Free);
-            g_CameraView.y = sin(g_CameraPhi_Free);
-            g_CameraView.z = cos(g_CameraPhi_Free) * cos(g_CameraTheta_Free);
+            // ========== CÂMERA LOOKDOWN ==========
+            g_CameraView = glm::vec4( 0.0f, -1.0f, 0.0f, 0.0f);
+            camera_position_c = g_CameraLookDownPosition;
+            g_CameraUp = glm::vec4(0.0f,0.0f,-1.0f,0.0f);
 
-            camera_position_c = g_CameraPosition;
-            camera_view_vector = g_CameraView;
         }
         else
         {
-            // ========== CÂMERA LOOK-AT (original) ==========
-            // Computamos a posição da câmera utilizando coordenadas esféricas.
+            // ========== CÂMERA LOOK-AT ==========
             float r = g_CameraDistance;
             float y = r*sin(g_CameraPhi);
             float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
             float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
-
-            camera_position_c  = glm::vec4(x,y,z,1.0f);
-            glm::vec4 camera_lookat_l = glm::vec4(0.0f,0.0f,0.0f,1.0f);
-            camera_view_vector = camera_lookat_l - camera_position_c;
+            camera_position_c = glm::vec4(x,y,z,1.0f);
+            g_CameraView = glm::vec4(-x,-y,-z,0.0f);   // Olhando para o centro
+            g_CameraUp = glm::vec4(0.0f,1.0f,0.0f,0.0f);
         }
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.
-        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
-
+        glm::mat4 view = Matrix_Camera_View(camera_position_c, g_CameraView, g_CameraUp);
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
 
@@ -1140,12 +1130,11 @@ bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, 
     rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
     
     // Calcula posição e direção da câmera baseado no modo atual
-    glm::vec4 cameraPos, cameraView;
+    glm::vec4 cameraPos;
     
-    if (g_UseFreeCamera) {
-        // CÂMERA LIVRE: Usa variáveis globais diretas
-        cameraPos = g_CameraPosition;
-        cameraView = g_CameraView;
+    if (g_UseLookDownCamera) {
+        // CÂMERA LOOKDOWN
+        cameraPos = g_CameraLookDownPosition;  
     } else {
         // CÂMERA LOOK-AT: Calcula posição esférica
         float r = g_CameraDistance;
@@ -1154,13 +1143,9 @@ bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, 
         float x_cam = r * cos(g_CameraPhi) * sin(g_CameraTheta);
         
         cameraPos = glm::vec4(x_cam, y_cam, z_cam, 1.0f);
-        glm::vec4 lookat = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        cameraView = lookat - cameraPos;
+
     }
-    
-    // Converte para world space
-    glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-    glm::mat4 view = Matrix_Camera_View(cameraPos, cameraView, up);
+    glm::mat4 view = Matrix_Camera_View(cameraPos, g_CameraView, g_CameraUp);
     glm::vec3 rayDir = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
     glm::vec3 rayOrigin = glm::vec3(cameraPos);
     
@@ -1175,7 +1160,7 @@ bool GetGridPositionFromMouse(GLFWwindow* window, double mouseX, double mouseY, 
     
     outGridX = grid.x;
     outGridZ = grid.y;
-    
+    printf("%d %d\n", outGridX, outGridZ);
     return (outGridX >= 0 && outGridX < MAP_WIDTH && outGridZ >= 0 && outGridZ < MAP_HEIGHT);
 }
 
@@ -1288,22 +1273,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
     
-        if (g_UseFreeCamera)
-        {
-            // ===== CÂMERA LIVRE =====
-            g_CameraTheta_Free -= 0.003f * dx;
-            g_CameraPhi_Free   -= 0.003f * dy;
-            
-            // Limita ângulo vertical
-            float phimax = M_PI_2 - 0.01f;
-            float phimin = -phimax;
-            
-            if (g_CameraPhi_Free > phimax)
-                g_CameraPhi_Free = phimax;
-            if (g_CameraPhi_Free < phimin)
-                g_CameraPhi_Free = phimin;
-        }
-        else
+        if (!g_UseLookDownCamera)
         {
             // ===== CÂMERA LOOK-AT =====
             g_CameraTheta -= 0.01f*dx;
@@ -1349,6 +1319,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 {
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+
+    // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
+    if (key == GLFW_KEY_H && action == GLFW_PRESS)
     {
         // Se o menu de compra estiver aberto, fecha ele
         if (g_ShowTowerMenu) {
@@ -1373,11 +1347,11 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         }
     }
 
-    // Tecla C: Alterna entre câmera livre e câmera look-at
+    // Tecla C: Alterna entre look down e câmera look-at
     if (key == GLFW_KEY_C && action == GLFW_PRESS)
     {
-        g_UseFreeCamera = !g_UseFreeCamera;
-        printf("Camera: %s\n", g_UseFreeCamera ? "LIVRE (WASD)" : "LOOK-AT");
+        g_UseLookDownCamera = !g_UseLookDownCamera;
+        printf("Camera: %s\n", g_UseLookDownCamera ? "LOOK DOWN" : "LOOK-AT");
     }
 
     // Tecla G: Reset da gravidade (testes)
@@ -1438,32 +1412,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
                g_ChickenWeapon.offset.z);
     }
 
-    // ===== CONTROLES DA CÂMERA LIVRE (WASD) =====
-    if (g_UseFreeCamera)
-    {
-        // Calcula vetores de direção
-        glm::vec4 camera_up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-        glm::vec4 w = -g_CameraView / norm(g_CameraView);
-        glm::vec4 u = crossproduct(camera_up, w) / norm(crossproduct(camera_up, w));
-
-        float speed = 0.3f;
-
-        // W - Frente
-        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            g_CameraPosition -= w * speed;
-
-        // S - Trás
-        if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            g_CameraPosition += w * speed;
-
-        // A - Esquerda
-        if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            g_CameraPosition -= u * speed;
-
-        // D - Direita
-        if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            g_CameraPosition += u * speed;
-    }
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
