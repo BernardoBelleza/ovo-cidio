@@ -4,10 +4,6 @@
 #include <glm/glm.hpp>
 #include "game_attributes.h"
 
-// Constantes matemáticas
-#define M_PI   3.14159265358979323846f
-#define M_PI_2 1.57079632679489661923f
-
 // ============================================================================
 // ESTRUTURAS DE FÍSICA E OBJETOS
 // ============================================================================
@@ -40,15 +36,6 @@ struct Tower {
     float attackSpeed;       // Velocidade de ataque (ataques por segundo)
     TowerType type;          // Tipo da torre (galinha ou beagle)
 };
-
-// ============================================================================
-// CONSTANTES FÍSICAS
-// ============================================================================
-
-extern const float GRAVITY;
-extern const float DAMPING;
-extern const float MIN_VELOCITY;
-extern const float CHICKEN_Y_OFFSET;
 
 // ============================================================================
 // VARIÁVEIS GLOBAIS DO SISTEMA DE TORRES

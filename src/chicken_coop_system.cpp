@@ -1,5 +1,6 @@
 #include "chicken_coop_system.h"
-#include "model_loader.h"
+#include "resource_loader.h"
+#include "game_attributes.h"
 #include <glad/glad.h>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -75,7 +76,6 @@ void DrawChickenCoops() {
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, MODEL_CHICKEN_COOP);
 
-        // O modelo ChickenCoop.obj possui um único objeto chamado "Cube.011_Cube.012"
         DrawVirtualObject("Cube.011_Cube.012");
     }
 }
