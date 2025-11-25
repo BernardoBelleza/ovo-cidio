@@ -12,6 +12,77 @@
 std::vector<Enemy> g_Enemies;
 std::vector<glm::vec3> g_PathWaypoints;
 
+static std::vector<Wave> g_Waves;
+static int g_CurrentWave;
+static float g_WaveTimer;
+static int g_NextSpawnIndex;
+static bool g_WaveActive;
+
+static void InitializeWaves() {
+    g_Waves.clear();
+    
+    Wave wave1;
+    wave1.duration = 20.0f;
+    wave1.spawns = {
+        {ENEMY_RAT, 0.0f},
+        {ENEMY_RAT, 3.0f},
+        {ENEMY_RAT, 6.0f},
+        {ENEMY_RAT, 9.0f},
+        {ENEMY_RAT, 12.0f}
+    };
+    g_Waves.push_back(wave1);
+    
+    Wave wave2;
+    wave2.duration = 30.0f;
+    wave2.spawns = {
+        {ENEMY_RAT, 0.0f},
+        {ENEMY_RAT, 1.0f},
+        {ENEMY_FOX, 3.0f},
+        {ENEMY_RAT, 5.0f},
+        {ENEMY_FOX, 7.0f},
+        {ENEMY_RAT, 9.0f},
+        {ENEMY_FOX, 11.0f},
+        {ENEMY_RAT, 13.0f}
+    };
+    g_Waves.push_back(wave2);
+    
+    Wave wave3;
+    wave3.duration = 40.0f;
+    wave3.spawns = {
+        {ENEMY_WOLF, 0.0f},
+        {ENEMY_HAWK, 2.0f},
+        {ENEMY_WOLF, 4.0f},
+        {ENEMY_HAWK, 6.0f},
+        {ENEMY_FOX, 8.0f},
+        {ENEMY_FOX, 9.0f},
+        {ENEMY_WOLF, 11.0f},
+        {ENEMY_HAWK, 13.0f},
+        {ENEMY_WOLF, 15.0f},
+        {ENEMY_HAWK, 17.0f}
+    };
+    g_Waves.push_back(wave3);
+    
+    Wave wave4;
+    wave4.duration = 50.0f;
+    wave4.spawns = {
+        {ENEMY_WOLF, 0.0f},
+        {ENEMY_WOLF, 1.5f},
+        {ENEMY_WOLF, 3.0f},
+        {ENEMY_HAWK, 5.0f},
+        {ENEMY_HAWK, 6.0f},
+        {ENEMY_WOLF, 8.0f},
+        {ENEMY_WOLF, 9.5f},
+        {ENEMY_WOLF, 11.0f},
+        {ENEMY_FOX, 13.0f},
+        {ENEMY_FOX, 14.0f},
+        {ENEMY_FOX, 15.0f},
+        {ENEMY_WOLF, 17.0f},
+        {ENEMY_WOLF, 18.5f},
+        {ENEMY_WOLF, 20.0f}
+    };
+    g_Waves.push_back(wave4);
+}
+
 static glm::vec3 GridToWorld(int gridX, int gridZ) {
     float worldX = gridX - MAP_WIDTH/2.0f + 0.5f;
     float worldZ = gridZ - MAP_HEIGHT/2.0f + 0.5f;
@@ -22,6 +93,11 @@ void InitializeEnemySystem() {
     g_Enemies.clear();
     g_PathWaypoints.clear();
     FindPathWaypoints();
+    InitializeWaves();
+    g_CurrentWave = -1;
+    g_WaveTimer = 0.0f;
+    g_NextSpawnIndex = 0;
+    g_WaveActive = false;
 }
 
 void FindPathWaypoints() {
@@ -197,12 +273,18 @@ void UpdateAllEnemies(float deltaTime) {
                     printf("[ENEMY] Inimigo chegou na base!\n");
                 }
             } else {
+                glm::vec3 oldPos = enemy.position;
+
                 glm::vec3 p0 = currentWaypoint;
                 glm::vec3 p3 = nextWaypoint;
                 glm::vec3 p1 = GetBezierControlPoint(enemy.currentPathIndex, true);
                 glm::vec3 p2 = GetBezierControlPoint(enemy.currentPathIndex, false);
-                
                 enemy.position = CalculateBezierPoint(p0, p1, p2, p3, enemy.pathProgress);
+                
+                glm::vec3 movement = enemy.position - oldPos;
+                if (glm::length(movement) > MIN_SEGMENT_LENGTH) {
+                    enemy.direction = glm::normalize(movement);
+                }
             }
         }
     }
@@ -215,7 +297,10 @@ void DrawAllEnemies() {
         const EnemyRenderInfo& renderInfo = GetEnemyRenderInfo(enemy.type);
         int modelID = GetEnemyModelID(enemy.type);
         
+        float angle = atan2f(enemy.direction.x, enemy.direction.z);
+        
         glm::mat4 model = Matrix_Translate(enemy.position.x, enemy.position.y + renderInfo.yOffset, enemy.position.z)
+                        * Matrix_Rotate_Y(angle)
                         * Matrix_Scale(renderInfo.scaleX, renderInfo.scaleY, renderInfo.scaleZ);
         
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -264,4 +349,57 @@ glm::vec3 GetBezierControlPoint(int waypointIndex, bool isP1) {
         }
         return next - glm::normalize(direction) * offset;
     }
+}
+
+void StartWave(int waveNumber) {
+    if (waveNumber < 0 || waveNumber >= (int)g_Waves.size()) {
+        printf("[WAVE] Aviso: Voce derrotou todas as waves!\n");
+        return;
+    }
+    
+    g_CurrentWave = waveNumber;
+    g_WaveTimer = 0.0f;
+    g_NextSpawnIndex = 0;
+    g_WaveActive = true;
+    
+    printf("[WAVE] Wave %d iniciada! (%d inimigos)\n", 
+           waveNumber + 1, 
+           (int)g_Waves[waveNumber].spawns.size());
+}
+
+void UpdateWaveSystem(float deltaTime) {
+    if (!g_WaveActive || g_CurrentWave < 0) return;
+    
+    g_WaveTimer += deltaTime;
+    
+    const Wave& currentWave = g_Waves[g_CurrentWave];
+    
+    while (g_NextSpawnIndex < (int)currentWave.spawns.size()) {
+        const EnemySpawn& spawn = currentWave.spawns[g_NextSpawnIndex];
+        
+        if (g_WaveTimer >= spawn.spawnTime) {
+            SpawnEnemy(spawn.type);
+            g_NextSpawnIndex++;
+        } else {
+            break;
+        }
+    }
+    
+    if (g_NextSpawnIndex >= (int)currentWave.spawns.size() && g_Enemies.empty()) {
+        g_WaveActive = false;
+        printf("[WAVE] Wave %d completa!\n", g_CurrentWave + 1);
+    }
+}
+
+bool IsWaveActive() {
+    return g_WaveActive;
+}
+
+bool IsWaveComplete() {
+    if (g_CurrentWave < 0) return false;
+    return !g_WaveActive && g_NextSpawnIndex >= (int)g_Waves[g_CurrentWave].spawns.size();
+}
+
+int GetCurrentWaveNumber() {
+    return g_CurrentWave;
 }

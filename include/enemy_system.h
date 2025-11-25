@@ -8,6 +8,16 @@
 extern std::vector<Enemy> g_Enemies;
 extern std::vector<glm::vec3> g_PathWaypoints;
 
+struct EnemySpawn {
+    EnemyType type;
+    float spawnTime;
+};
+
+struct Wave {
+    std::vector<EnemySpawn> spawns;
+    float duration;
+};
+
 void InitializeEnemySystem();
 void FindPathWaypoints();
 void SpawnEnemy(EnemyType type);
@@ -17,5 +27,11 @@ void DrawAllEnemies();
 glm::vec3 CalculateBezierPoint(const glm::vec3& p0, const glm::vec3& p1, 
                                const glm::vec3& p2, const glm::vec3& p3, float t);
 glm::vec3 GetBezierControlPoint(int waypointIndex, bool isP1);
+
+void StartWave(int waveNumber);
+void UpdateWaveSystem(float deltaTime);
+bool IsWaveActive();
+bool IsWaveComplete();
+int GetCurrentWaveNumber();
 
 #endif // ENEMY_SYSTEM_H

@@ -266,6 +266,7 @@ int main(int argc, char* argv[])
         UpdatePhysics(g_BeaglePhysics, deltaTime);
         UpdateAllTowersPhysics(deltaTime);
         UpdateAllEnemies(deltaTime);
+        UpdateWaveSystem(deltaTime);
         
         // Aqui executamos as operações de renderização
 
@@ -625,6 +626,17 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     {
         SpawnEnemy(ENEMY_WOLF);
         printf("[TESTE] Lobo spawnado!\n");
+    }
+    
+    // Tecla ENTER: Inicia próxima wave
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+    {
+        if (!IsWaveActive()) {
+            int nextWave = GetCurrentWaveNumber() + 1;
+            StartWave(nextWave);
+        } else {
+            printf("[WAVE] Wave ja esta ativa!\n");
+        }
     }
     
     // Tecla H: Spawna um gavião (teste de inimigos)

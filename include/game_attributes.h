@@ -92,6 +92,7 @@ enum EnemyType {
 struct Enemy {
     EnemyType type;
     glm::vec3 position;
+    glm::vec3 direction;
     int currentPathIndex;
     float health;
     float maxHealth;
