@@ -325,6 +325,10 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_thompson"), 3);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_beagle"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_ak47"), 5);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_hawk"), 6);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_fox"), 7);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_wolf"), 8);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_rat"), 9);
     glUseProgram(0);
 }
 
@@ -597,9 +601,12 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     
     // ===== INIMIGOS =====
     printf("\n[INIMIGOS]\n");
+    LoadSingleModel("../../data/models/enemies/hawk/hawk.obj", "hawk");
+    LoadSingleModel("../../data/models/enemies/fox/fox.obj", "fox");
+    LoadSingleModel("../../data/models/enemies/wolf/wolf.obj", "wolf");
+    LoadSingleModel("../../data/models/enemies/rat/rat.obj", "rat");
     
-    
-    // ===== PROJETEIS =====
+    // ===== PROJETEIS ===
     printf("\n[PROJETEIS]\n");
     
     

@@ -35,6 +35,7 @@
 #include "tower_system.h"
 #include "chicken_coop_system.h"
 #include "hud.h"
+#include "enemy_system.h"
 
 // Declaração de funções auxiliares para renderizar texto dentro da janela
 // OpenGL. Estas funções estão definidas no arquivo "textrendering.cpp".
@@ -147,7 +148,7 @@ void InitializeMap() {
     
     int layout[MAP_HEIGHT][MAP_WIDTH] = {
         {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
-        {2,1,1,1,1,1,0,0,0,0,0,0,0,0,2},
+        {2,4,1,1,1,1,0,0,0,0,0,0,0,0,2},
         {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
         {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
         {2,0,0,0,0,1,0,0,0,0,0,0,0,0,2},
@@ -230,6 +231,8 @@ int main(int argc, char* argv[])
     InitializeHUD();
 
     InitializeTowers();
+    
+    InitializeEnemySystem();
 
     if ( argc > 1 )
     {
@@ -262,6 +265,7 @@ int main(int argc, char* argv[])
         UpdatePhysics(g_ChickenPhysics, deltaTime);
         UpdatePhysics(g_BeaglePhysics, deltaTime);
         UpdateAllTowersPhysics(deltaTime);
+        UpdateAllEnemies(deltaTime);
         
         // Aqui executamos as operações de renderização
 
@@ -615,6 +619,34 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ChickenWeapon.enabled = !g_ChickenWeapon.enabled;
         printf("Arma: %s\n", g_ChickenWeapon.enabled ? "VISÍVEL" : "ESCONDIDA");
     }
+    
+    // Tecla E: Spawna um lobo (teste de inimigos)
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    {
+        SpawnEnemy(ENEMY_WOLF);
+        printf("[TESTE] Lobo spawnado!\n");
+    }
+    
+    // Tecla H: Spawna um gavião (teste de inimigos)
+    if (key == GLFW_KEY_H && action == GLFW_PRESS)
+    {
+        SpawnEnemy(ENEMY_HAWK);
+        printf("[TESTE] Gaviao spawnado!\n");
+    }
+    
+    // Tecla F: Spawna uma raposa (teste de inimigos)
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+    {
+        SpawnEnemy(ENEMY_FOX);
+        printf("[TESTE] Raposa spawnada!\n");
+    }
+    
+    // Tecla R: Spawna um rato (teste de inimigos)
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+    {
+        SpawnEnemy(ENEMY_RAT);
+        printf("[TESTE] Rato spawnado!\n");
+    }
 
     // ===== AJUSTAR POSIÇÃO DA ARMA (TECLAS I, K, J, L, U, O) =====
     float offset_step = 0.05f;
@@ -815,6 +847,10 @@ void LoadGameResources()
     LoadTextureImage("../../data/textures/guns/m1a1/thompson.png");
     LoadTextureImage("../../data/textures/towers/beagle.png");
     LoadTextureImage("../../data/textures/guns/ak47/ak47.jpg");
+    LoadTextureImage("../../data/textures/enemies/hawk.png");
+    LoadTextureImage("../../data/textures/enemies/fox.png");
+    LoadTextureImage("../../data/textures/enemies/wolf.png");
+    LoadTextureImage("../../data/textures/enemies/rat.png");
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -887,6 +923,7 @@ void RenderScene(GLFWwindow* window, const glm::mat4& view, const glm::mat4& pro
     DrawAllTowers();
     DrawChickenCoops();
     DrawTowerRangeCircle();
+    DrawAllEnemies();
 
     // Imprimimos na tela informação sobre o número de quadros renderizados
     // por segundo (frames per second).
@@ -925,6 +962,9 @@ void DrawMapGrid()
                     break;
                 case CELL_BASE:
                     glUniform1i(g_object_id_uniform, CELL_BASE_PLANE);
+                    break;
+                case CELL_START:
+                    glUniform1i(g_object_id_uniform, CELL_START_PLANE);
                     break;
             }
             

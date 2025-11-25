@@ -22,6 +22,7 @@ const int MAP_SIZE = 15;
 #define CELL_PATH_PLANE    11
 #define CELL_BLOCKED_PLANE 12
 #define CELL_BASE_PLANE    13
+#define CELL_START_PLANE   14
 
 // Torres
 #define MODEL_CHICKEN_TOWER  20
@@ -31,6 +32,12 @@ const int MAP_SIZE = 15;
 // Armas
 #define MODEL_THOMPSON_GUN   25
 #define MODEL_AK47           26
+
+// Inimigos
+#define MODEL_HAWK           30
+#define MODEL_FOX            31
+#define MODEL_WOLF           32
+#define MODEL_RAT            33
 
 // Configurações do jogo
 const int PLAYER_STARTING_GOLD = 200;
@@ -45,7 +52,8 @@ enum CellType {
     CELL_EMPTY = 0,
     CELL_PATH = 1,
     CELL_BLOCKED = 2,
-    CELL_BASE = 3
+    CELL_BASE = 3,
+    CELL_START = 4
 };
 
 // Grid do mapa
@@ -74,6 +82,24 @@ const TowerAttributes CHICKEN_TOWER = {
 // ATRIBUTOS DE INIMIGOS
 // ============================================================================
 
+enum EnemyType {
+    ENEMY_WOLF = 0,
+    ENEMY_HAWK,
+    ENEMY_FOX,
+    ENEMY_RAT
+};
+
+struct Enemy {
+    EnemyType type;
+    glm::vec3 position;
+    int currentPathIndex;
+    float health;
+    float maxHealth;
+    float moveSpeed;
+    bool active;
+    float pathProgress;
+};
+
 struct EnemyAttributes {
     float maxHealth;
     float moveSpeed;
@@ -82,25 +108,32 @@ struct EnemyAttributes {
 };
 
 // Inimigos disponiveis
-const EnemyAttributes BASIC_ENEMY = {
-    50.0f,
-    2.0f,
-    10,
-    1
+const EnemyAttributes WOLF_ATTRIBUTES = {
+    100.0f,
+    1.5f,
+    20,
+    2
 };
 
-const EnemyAttributes FAST_ENEMY = {
-    30.0f,
-    4.0f,
+const EnemyAttributes HAWK_ATTRIBUTES = {
+    50.0f,
+    2.5f,
     15,
     1
 };
 
-const EnemyAttributes TANK_ENEMY = {
-    150.0f,
-    1.0f,
-    30,
-    3
+const EnemyAttributes FOX_ATTRIBUTES = {
+    75.0f,
+    2.0f,
+    25,
+    1
+};
+
+const EnemyAttributes RAT_ATTRIBUTES = {
+    20.0f,
+    3.0f,
+    10,
+    1
 };
 
 // ============================================================================
@@ -119,5 +152,42 @@ const ProjectileAttributes BULLET = {
     10.0f,
     10.0f
 };
+
+// ============================================================================
+// CONFIGURAÇÕES DE RENDERIZAÇÃO DE INIMIGOS
+// ============================================================================
+
+struct EnemyRenderInfo {
+    float scaleX, scaleY, scaleZ;
+    float yOffset;
+    const char* meshName;
+};
+
+const EnemyRenderInfo WOLF_RENDER = {
+    0.005f, 0.005f, 0.005f,
+    0.4f,
+    "Geo_Wolf"
+};
+
+const EnemyRenderInfo HAWK_RENDER = {
+    0.15f, 0.15f, 0.15f,
+    2.0f,
+    "FerruginousHawk_Mesh"
+};
+
+const EnemyRenderInfo FOX_RENDER = {
+    0.1f, 0.1f, 0.1f,
+    0.0f,
+    "Fox_Mesh"
+};
+
+const EnemyRenderInfo RAT_RENDER = {
+    0.1f, 0.1f, 0.1f,
+    0.0f,
+    "KangarooRats_Mesh"
+};
+
+const float ENEMY_BEZIER_SMOOTHNESS = 0.3f;
+const float MIN_SEGMENT_LENGTH = 0.001f;
 
 #endif // GAME_ATTRIBUTES_H

@@ -19,10 +19,11 @@ uniform mat4 view;
 uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
-#define CELL_EMPTY_PLANE   10
-#define CELL_PATH_PLANE    11
-#define CELL_BLOCKED_PLANE 12
-#define CELL_BASE_PLANE    13
+#define CELL_EMPTY_PLANE    10
+#define CELL_PATH_PLANE     11
+#define CELL_BLOCKED_PLANE  12
+#define CELL_BASE_PLANE     13
+#define CELL_START_PLANE    14
 
 
 // Tower Defense Models
@@ -31,6 +32,12 @@ uniform mat4 projection;
 #define MODEL_THOMPSON_GUN  25
 #define MODEL_AK47          26
 #define MODEL_CHICKEN_COOP  40
+
+// Enemies
+#define MODEL_HAWK          30
+#define MODEL_FOX           31
+#define MODEL_WOLF          32
+#define MODEL_RAT           33
 
 // Tower Range Circle
 #define TOWER_RANGE_CIRCLE  99
@@ -48,6 +55,10 @@ uniform sampler2D texture_chicken;
 uniform sampler2D texture_thompson;
 uniform sampler2D texture_beagle;
 uniform sampler2D texture_ak47;
+uniform sampler2D texture_hawk;
+uniform sampler2D texture_fox;
+uniform sampler2D texture_wolf;
+uniform sampler2D texture_rat;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -89,43 +100,67 @@ void main()
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(texture_chicken, vec2(U, V)).rgb;  // Aplica textura da galinha
+        Kd0 = texture(texture_chicken, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_THOMPSON_GUN )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(texture_thompson, vec2(U, V)).rgb;  // Aplica textura da Thompson
+        Kd0 = texture(texture_thompson, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_BEAGLE_TOWER )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(texture_beagle, vec2(U, V)).rgb;  // Aplica textura do beagle
+        Kd0 = texture(texture_beagle, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_AK47 )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(texture_ak47, vec2(U, V)).rgb;  // Aplica textura do AK47
+        Kd0 = texture(texture_ak47, vec2(U, V)).rgb;
     }
     else if ( object_id == MODEL_CHICKEN_COOP )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = vec3(0.7, 0.55, 0.35); // Madeira clara
+        Kd0 = vec3(0.7, 0.55, 0.35);
+    }
+    else if ( object_id == MODEL_HAWK )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(texture_hawk, vec2(U, V)).rgb;
+    }
+    else if ( object_id == MODEL_FOX )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(texture_fox, vec2(U, V)).rgb;
+    }
+    else if ( object_id == MODEL_WOLF )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(texture_wolf, vec2(U, V)).rgb;
+    }
+    else if ( object_id == MODEL_RAT )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(texture_rat, vec2(U, V)).rgb;
     }
     else if ( object_id == CELL_EMPTY_PLANE )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(texture_grass, texcoords).rgb;  // Aplica textura de grama
+        Kd0 = texture(texture_grass, texcoords).rgb;
     }
     else if ( object_id == CELL_PATH_PLANE )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(texture_path, texcoords).rgb;  // Aplica textura de caminho
+        Kd0 = texture(texture_path, texcoords).rgb;
     }
     else if ( object_id == CELL_BLOCKED_PLANE )
     {
@@ -138,6 +173,12 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = vec3(0.2, 0.4, 0.9); // Azul
+    }
+    else if ( object_id == CELL_START_PLANE )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = vec3(1.0, 0.0, 0.0); // Vermelho
     }
     else if ( object_id == TOWER_RANGE_CIRCLE )
     {

@@ -15,6 +15,7 @@ set(SOURCES
   src/hud.cpp
   src/chicken_coop_system.cpp
   src/resource_loader.cpp
+  src/enemy_system.cpp
 )
 
 cmake_minimum_required(VERSION 3.5.0)
