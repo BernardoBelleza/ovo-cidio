@@ -279,10 +279,8 @@ void DrawTowerRangeCircle() {
     // Desenha várias linhas radiais formando um círculo
     for (int i = 0; i < segments; i++) {
         float angle1 = 2.0f * M_PI * i / segments;
-        float angle2 = 2.0f * M_PI * (i + 1) / segments;
         
         glm::vec3 p1 = center + glm::vec3(range * cos(angle1), 0.0f, range * sin(angle1));
-        glm::vec3 p2 = center + glm::vec3(range * cos(angle2), 0.0f, range * sin(angle2));
         
         // Desenha pequenos planos/linhas conectando os pontos
         glm::mat4 model = Matrix_Translate(p1.x, center.y, p1.z)
