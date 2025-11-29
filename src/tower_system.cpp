@@ -54,6 +54,7 @@ void InitializeTowers() {
         g_Towers[i].gridZ = 0;
         g_Towers[i].physics.position = glm::vec3(0.0f, 0.0f, 0.0f);
         g_Towers[i].physics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+        g_Towers[i].physics.direction = glm::vec3(0.0f, 0.0f, 1.0f);
         g_Towers[i].physics.mass = 1.0f;
         g_Towers[i].physics.radius = 0.3f;
         g_Towers[i].physics.onGround = false;
@@ -62,6 +63,9 @@ void InitializeTowers() {
         g_Towers[i].attackSpeed = 1.0f;
         g_Towers[i].type = TOWER_CHICKEN;
     }
+
+
+
     g_TowerCount = 0;
     g_SelectedTowerIndex = -1;
     g_ShowTowerMenu = false;
@@ -106,8 +110,13 @@ bool AddTower(int gridX, int gridZ, TowerType type) {
     g_Towers[g_TowerCount].attackSpeed = 1.0f;
     g_Towers[g_TowerCount].type = type;
     
+
+    // Inicializa direcao da torre
+    g_Towers[g_TowerCount].physics.direction = GetDirectionToNearestPath(gridX, gridZ, g_Towers[g_TowerCount].attackRange);
+    
     g_TowerCount++;
     
+
     const char* typeName = (type == TOWER_CHICKEN) ? "Galinha" : "Beagle";
     printf("[TORRE] Torre %s adicionada em (%d, %d) - Total: %d/%d\n", 
            typeName, gridX, gridZ, g_TowerCount, MAX_TOWERS);
@@ -153,14 +162,16 @@ void UpdateAllTowersPhysics(float deltaTime) {
     }
 }
 
-void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon) {
+void DrawChickenWithWeapon(glm::vec3 position, glm::vec3 direction, bool drawWeapon) {
     // Aplica offset Y para ajustar a base do modelo
     position.y += CHICKEN_Y_OFFSET;
     
+    float angle = atan2f(direction.x, direction.z);
+
     // Matriz de transformação da galinha
     glm::mat4 chickenModel = Matrix_Translate(position.x, position.y, position.z)
                            * Matrix_Scale(0.05f, 0.05f, 0.05f)
-                           * Matrix_Rotate_Y(M_PI_2);
+                           * Matrix_Rotate_Y(angle);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(chickenModel));
     glUniform1i(g_object_id_uniform, MODEL_CHICKEN_TOWER);
@@ -195,12 +206,14 @@ void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon) {
     }
 }
 
-void DrawBeagleWithWeapon(glm::vec3 position, bool drawWeapon) {
+void DrawBeagleWithWeapon(glm::vec3 position, glm::vec3 direction, bool drawWeapon) {
     position.y += BEAGLE_Y_OFFSET;
-    
+
+    float angle = atan2f(direction.x, direction.z);
     // Matriz de transformação do beagle
     glm::mat4 beagleModel = Matrix_Translate(position.x, position.y, position.z)
-                          * Matrix_Scale(0.01f, 0.01f, 0.01f);
+                          * Matrix_Scale(0.01f, 0.01f, 0.01f)
+                          * Matrix_Rotate_Y(angle);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(beagleModel));
     glUniform1i(g_object_id_uniform, MODEL_BEAGLE_TOWER);
@@ -234,9 +247,9 @@ void DrawAllTowers() {
         
         // Desenha a torre de acordo com seu tipo
         if (g_Towers[i].type == TOWER_CHICKEN) {
-            DrawChickenWithWeapon(g_Towers[i].physics.position, true);
+            DrawChickenWithWeapon(g_Towers[i].physics.position, g_Towers[i].physics.direction, true);
         } else if (g_Towers[i].type == TOWER_BEAGLE) {
-            DrawBeagleWithWeapon(g_Towers[i].physics.position, true);
+            DrawBeagleWithWeapon(g_Towers[i].physics.position, g_Towers[i].physics.direction, true);
         }
     }
 }
@@ -373,4 +386,46 @@ void ShowTowerMenuOnScreen() {
     // Esta função será chamada no loop de renderização
     // Por enquanto, o menu é mostrado no console
     // No futuro, pode ser implementado um menu visual na tela
+}
+
+glm::vec3 GetDirectionToNearestPath(int originX, int originZ, float range) {
+    int foundX = -1;
+    int foundZ = -1;
+    bool found = false;
+    int radius;
+
+    int searchRadiusLimit = (int) ceil(range); 
+
+    for (radius = 1; radius <= searchRadiusLimit ; radius++) {
+        for (int x = originX - radius; x <= originX + radius ; x++) {
+            for (int z = originZ - radius; z <= originZ + radius ; z++) {
+                
+                // Se não estiver na borda do quadrado, pula
+                if (abs(x - originX) != radius && abs(z - originZ) != radius)
+                    continue;
+                // Se estiver no grid e for uma célula path, achamos
+                if (x >= 0 && x < MAP_WIDTH && z >= 0 && z < MAP_HEIGHT) {
+                    if (g_MapGrid[z][x] == CELL_PATH) {
+                        foundX = x;
+                        foundZ = z;
+                        found = true;
+                        break; 
+                    }
+                }
+            }
+            if (found) break;
+        }
+        if (found) break;
+    }
+
+    if (found) {
+        glm::vec3 targetPos = GridToWorld(foundX, foundZ);
+        glm::vec3 towerPos = g_Towers[g_TowerCount].physics.position;
+        
+        return glm::normalize(glm::vec3(targetPos.x - towerPos.x, 0.0f, targetPos.z - towerPos.z));
+
+    } else {
+        // Não encontramos nada, olha para frente
+        return glm::vec3(0.0f, 0.0f, 1.0f);
+    }
 }

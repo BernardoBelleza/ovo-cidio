@@ -97,24 +97,6 @@ float g_CameraTheta_Free = M_PI; // Começa olhando para -Z
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-// Objeto de física do chicken tower (testes)
-PhysicsObject g_ChickenPhysics = {
-    glm::vec3(0.0f, 5.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 0.0f),
-    1.0f,
-    0.3f,
-    false
-};
-
-// Objeto de física do beagle tower (testes)
-PhysicsObject g_BeaglePhysics = {
-    glm::vec3(0.0f, 5.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 0.0f),
-    1.0f,
-    0.3f,
-    false
-};
-
 // ============================================================================
 // SISTEMA DE ARMA ANEXADA
 // ============================================================================
@@ -262,8 +244,6 @@ int main(int argc, char* argv[])
         float deltaTime = currentTime - prevTime;
         prevTime = currentTime;
         
-        UpdatePhysics(g_ChickenPhysics, deltaTime);
-        UpdatePhysics(g_BeaglePhysics, deltaTime);
         UpdateAllTowersPhysics(deltaTime);
         UpdateAllEnemies(deltaTime);
         UpdateWaveSystem(deltaTime);
@@ -600,20 +580,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         printf("Camera: %s\n", g_UseFreeCamera ? "LIVRE (WASD)" : "LOOK-AT");
     }
 
-    // Tecla G: Reset da gravidade (testes)
-    if (key == GLFW_KEY_G && action == GLFW_PRESS)
-    {
-        // Reseta posição e velocidade do chicken (testes)
-        g_ChickenPhysics.position.y = 5.0f;
-        g_ChickenPhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        g_ChickenPhysics.onGround = false;
-
-        // Reseta posição e velocidade do beagle (testes)
-        g_BeaglePhysics.position.y = 5.0f;
-        g_BeaglePhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        g_BeaglePhysics.onGround = false;
-    }
-    
     // Tecla T: Toggle arma (mostra/esconde)
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
     {

@@ -11,6 +11,7 @@
 struct PhysicsObject {
     glm::vec3 position;
     glm::vec3 velocity;
+    glm:: vec3 direction;
     float mass;
     float radius;
     bool onGround;
@@ -86,6 +87,9 @@ void DrawTowerRangeCircle();
 
 // Exibe informações da torre selecionada
 void ShowTowerInfo(int towerIndex);
+
+// Busca a direçaoo da torre para o caminho mais próximo que ela encontrar
+glm::vec3 GetDirectionToNearestPath(int originX, int originZ, float range);
 
 // Sistema de compra
 void OpenTowerMenu(int gridX, int gridZ);
