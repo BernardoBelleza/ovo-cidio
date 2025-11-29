@@ -91,6 +91,9 @@ void ShowTowerInfo(int towerIndex);
 // Busca a direçaoo da torre para o caminho mais próximo que ela encontrar
 glm::vec3 GetDirectionToNearestPath(int originX, int originZ, float range);
 
+// Busca a direção do inimigo mais adiantado dentro do alcance
+void UpdateTowerTargeting(Tower& tower);
+
 // Sistema de compra
 void OpenTowerMenu(int gridX, int gridZ);
 void CloseTowerMenu();
