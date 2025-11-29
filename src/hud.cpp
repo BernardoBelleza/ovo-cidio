@@ -1,4 +1,5 @@
 #include "hud.h"
+#include "game_attributes.h"
 #include <GLFW/glfw3.h>
 #include <sstream>
 #include <iomanip>
@@ -6,8 +7,7 @@
 // Declaração externa da função de text rendering (definida em main.cpp)
 extern void TextRendering_PrintString(GLFWwindow* window, const std::string &str, float x, float y, float scale);
 
-// Variáveis globais de economia
-int g_PlayerMoney = 1000; // Dinheiro inicial
+int g_PlayerMoney;
 
 // Variáveis globais de mensagens
 std::deque<std::string> g_ConsoleMessages;
@@ -15,7 +15,7 @@ std::deque<std::string> g_ConsoleMessages;
 // ==================== ECONOMIA ====================
 
 void InitializeEconomy() {
-    g_PlayerMoney = 1000; // Resetar para valor inicial
+    g_PlayerMoney = PLAYER_MONEY_START;
 }
 
 bool SpendMoney(int amount) {

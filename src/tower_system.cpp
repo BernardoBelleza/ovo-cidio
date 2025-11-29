@@ -1,6 +1,8 @@
 #include "tower_system.h"
-#include "model_loader.h"
 #include "hud.h"
+#include "matrices.h"
+#include "resource_loader.h"
+#include "game_attributes.h"
 #include <cstdio>
 #include <cmath>
 #include <glad/glad.h>
@@ -16,36 +18,7 @@ extern glm::vec3 GridToWorld(int gridX, int gridZ);
 extern glm::ivec2 WorldToGrid(glm::vec3 worldPos);
 extern float GetGroundHeight(int gridX, int gridZ);
 
-// Enumeração de tipos de célula do grid (definida em main.cpp)
-// MAP_WIDTH e MAP_HEIGHT agora precisam ser variáveis exportadas
-enum CellType {
-    CELL_EMPTY = 0,
-    CELL_PATH = 1,
-    CELL_BLOCKED = 2,
-    CELL_BASE = 3
-};
-extern int g_MapGrid[15][15];
-
-// Funções de renderização (definidas em main.cpp)
-extern void DrawVirtualObject(const char* object_name);
-
-// Variáveis uniformes do shader (definidas em main.cpp)
-extern GLint g_model_uniform;
-extern GLint g_object_id_uniform;
-extern GLuint g_GpuProgramID;
-
-// Funções de transformação de matrizes (definidas em matrices.cpp)
-extern glm::mat4 Matrix_Translate(float tx, float ty, float tz);
-extern glm::mat4 Matrix_Scale(float sx, float sy, float sz);
-extern glm::mat4 Matrix_Rotate_Y(float angle);
-extern glm::mat4 Matrix_Rotate_X(float angle);
-extern glm::mat4 Matrix_Rotate_Z(float angle);
-
-// Variáveis globais de uniforms (definidas em main.cpp)
-extern GLint g_model_uniform;
-extern GLint g_object_id_uniform;
-
-// IDs dos modelos já estão definidos em model_loader.h como #defines
+// IDs dos modelos já estão definidos em resource_loader.h como #defines
 
 // Estrutura de arma anexada (definida em main.cpp)
 struct AttachedWeapon {
@@ -56,16 +29,6 @@ struct AttachedWeapon {
 };
 extern AttachedWeapon g_ChickenWeapon;
 extern AttachedWeapon g_BeagleWeapon;
-
-// ============================================================================
-// CONSTANTES FÍSICAS
-// ============================================================================
-
-const float GRAVITY = -9.8f;
-const float DAMPING = 0.6f;
-const float MIN_VELOCITY = 0.05f;
-const float CHICKEN_Y_OFFSET = -0.43f;
-const float BEAGLE_Y_OFFSET = 0.15f;
 
 // ============================================================================
 // VARIÁVEIS GLOBAIS DO SISTEMA DE TORRES
@@ -94,10 +57,10 @@ void InitializeTowers() {
         g_Towers[i].physics.mass = 1.0f;
         g_Towers[i].physics.radius = 0.3f;
         g_Towers[i].physics.onGround = false;
-        g_Towers[i].attackRange = 3.0f;   // 3 células de alcance
-        g_Towers[i].attackDamage = 10.0f; // 10 de dano
-        g_Towers[i].attackSpeed = 1.0f;   // 1 ataque por segundo
-        g_Towers[i].type = TOWER_CHICKEN; // Tipo padrão
+        g_Towers[i].attackRange = 3.0f;
+        g_Towers[i].attackDamage = 10.0f;
+        g_Towers[i].attackSpeed = 1.0f;
+        g_Towers[i].type = TOWER_CHICKEN;
     }
     g_TowerCount = 0;
     g_SelectedTowerIndex = -1;
@@ -157,10 +120,8 @@ void UpdatePhysics(PhysicsObject& obj, float deltaTime) {
         return; // Objeto parou no chão
     }
     
-    // Aplica gravidade
     obj.velocity.y += GRAVITY * deltaTime;
-    
-    // Atualiza posição
+
     obj.position += obj.velocity * deltaTime;
     
     // Verifica colisão com o chão
@@ -235,16 +196,15 @@ void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon) {
 }
 
 void DrawBeagleWithWeapon(glm::vec3 position, bool drawWeapon) {
-    // Aplica offset Y para ajustar a base do modelo (ajuste conforme necessário)
     position.y += BEAGLE_Y_OFFSET;
     
     // Matriz de transformação do beagle
     glm::mat4 beagleModel = Matrix_Translate(position.x, position.y, position.z)
-                          * Matrix_Scale(0.01f, 0.01f, 0.01f); // Escala (ajuste se necessário)
+                          * Matrix_Scale(0.01f, 0.01f, 0.01f);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(beagleModel));
     glUniform1i(g_object_id_uniform, MODEL_BEAGLE_TOWER);
-    DrawVirtualObject("Geo_Beagle"); // Nome correto do objeto no arquivo OBJ
+    DrawVirtualObject("Geo_Beagle");
     
     // Desenha a AK47 se estiver habilitada
     if (drawWeapon && g_BeagleWeapon.enabled) {
@@ -262,8 +222,7 @@ void DrawBeagleWithWeapon(glm::vec3 position, bool drawWeapon) {
         
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(weaponModel));
         glUniform1i(g_object_id_uniform, MODEL_AK47);
-        
-        // Desenha a AK47
+
         DrawVirtualObject("Box003");
     }
 }
@@ -283,7 +242,6 @@ void DrawAllTowers() {
 }
 
 bool CanPlaceTower(int gridX, int gridZ) {
-    const int MAP_SIZE = 15;  // Tamanho do grid (mesmo valor de MAP_WIDTH e MAP_HEIGHT em main.cpp)
     if (gridX < 0 || gridX >= MAP_SIZE || gridZ < 0 || gridZ >= MAP_SIZE)
         return false;
     return g_MapGrid[gridZ][gridX] == CELL_EMPTY;

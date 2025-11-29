@@ -11,10 +11,11 @@ set(SOURCES
   src/tiny_obj_loader.cpp
   src/stb_image.cpp
   src/glad.c
-  src/model_loader.cpp
   src/tower_system.cpp
   src/hud.cpp
   src/chicken_coop_system.cpp
+  src/resource_loader.cpp
+  src/enemy_system.cpp
 )
 
 cmake_minimum_required(VERSION 3.5.0)
