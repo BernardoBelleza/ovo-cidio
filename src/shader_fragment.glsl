@@ -81,9 +81,10 @@ void main()
 
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
-    
-    vec4 r = -l + 2*n*dot(l,n);
 
+    // Half-vector do blinn-phong
+    vec4 h = normalize(l + v);
+    
     // Coordenadas de textura U e V
     float U = 0.0;
     float V = 0.0;
@@ -91,7 +92,7 @@ void main()
     // Se nada for definido, o padrão da luz é nulo no objeto
     vec3 Kd0 = vec3(0.0, 0.0, 0.0); 
     vec3 Ks0 = vec3(0.0, 0.0, 0.0); 
-    float q = 1000; // Para ser ignorável deve ser muito alto
+    float q = 1000.0; // Para ser ignorável deve ser muito alto
     vec3 I = vec3(1.0, 1.0, 1.0); // Intensidade da luz branca
    
     if ( object_id == MODEL_CHICKEN_TOWER )
@@ -124,7 +125,7 @@ void main()
         V = texcoords.y;
         Kd0 = texture(texture_chicken_coop, vec2(U,V)).rgb; 
         Ks0 = vec3(1.0, 1.0, 1.0);
-        q = 3.0;
+        q = 10.0;
 
     }
     else if ( object_id == CELL_EMPTY_PLANE )
@@ -159,7 +160,7 @@ void main()
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
     
-    vec3 phong_specular_term  = Ks0 * I * pow(max(dot(r, v), 0.0),q); 
+    vec3 phong_specular_term  = Ks0 * I * pow(max(dot(n, h), 0.0),q); 
     color.rgb = Kd0 * I * (lambert + 0.01) + phong_specular_term;
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
