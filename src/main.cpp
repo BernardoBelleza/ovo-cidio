@@ -818,6 +818,7 @@ void LoadGameResources()
     LoadTextureImage("../../data/textures/enemies/fox.png");
     LoadTextureImage("../../data/textures/enemies/wolf.png");
     LoadTextureImage("../../data/textures/enemies/rat.png");
+    LoadTextureImage("../../data/textures/environment/ChickenCoop.png");
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -854,8 +855,6 @@ void UpdateCameras(glm::mat4& view, glm::mat4& projection)
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.
         view = Matrix_Camera_View(camera_position_c, g_CameraView, g_CameraUp);
-        // Agora computamos a matriz de Projeção.
-        projection;
 
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.

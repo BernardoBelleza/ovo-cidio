@@ -329,6 +329,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_fox"), 7);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_wolf"), 8);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_rat"), 9);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_chicken_coop"), 10);
     glUseProgram(0);
 }
 

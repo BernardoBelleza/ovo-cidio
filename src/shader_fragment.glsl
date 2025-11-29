@@ -13,6 +13,8 @@ in vec4 position_model;
 // Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
 in vec2 texcoords;
 
+in vec3 gouraud_illumination;
+
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
 uniform mat4 view;
@@ -117,6 +119,8 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_thompson, vec2(U, V)).rgb;
+        Ks0 = vec3(0.8, 0.8, 0.8);   
+        q = 10.0;
     }
     else if ( object_id == MODEL_BEAGLE_TOWER )
     {
@@ -129,16 +133,15 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_ak47, vec2(U, V)).rgb;
-    }
+        Ks0 = vec3(0.8, 0.8, 0.8);   
+        q = 10.0;
+
+ }
     else if ( object_id == MODEL_CHICKEN_COOP )
     {
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_chicken_coop, vec2(U,V)).rgb; 
-        Ks0 = vec3(1.0, 1.0, 1.0);
-        q = 10.0;
-
-        Kd0 = vec3(0.7, 0.55, 0.35);
     }
     else if ( object_id == MODEL_HAWK )
     {
@@ -203,7 +206,15 @@ void main()
     float lambert = max(0,dot(n,l));
     
     vec3 phong_specular_term  = Ks0 * I * pow(max(dot(n, h), 0.0),q); 
-    color.rgb = Kd0 * I * (lambert + 0.01) + phong_specular_term;
+
+
+    if(object_id == MODEL_FOX || object_id == MODEL_CHICKEN_COOP){
+        color.rgb = Kd0 * gouraud_illumination;
+    }
+    else{
+        color.rgb = Kd0 * I * (lambert + 0.01) + phong_specular_term;
+    }
+
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
     // necessário:
