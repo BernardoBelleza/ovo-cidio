@@ -9,8 +9,9 @@
 const float GRAVITY = -9.8f;
 const float DAMPING = 0.6f;
 const float MIN_VELOCITY = 0.05f;
-const float CHICKEN_Y_OFFSET = -0.43f;
-const float BEAGLE_Y_OFFSET = 0.15f;
+const float CHICKEN_Y_OFFSET = -0.35f;
+const float BEAGLE_Y_OFFSET = -0.05f;
+const float BEAGLE_Z_OFFSET = 0.2f;
 
 // Mapa
 const int MAP_WIDTH = 15;
@@ -38,6 +39,9 @@ const int MAP_SIZE = 15;
 #define MODEL_FOX            31
 #define MODEL_WOLF           32
 #define MODEL_RAT            33
+
+// Círculo de alcance da torre
+#define TOWER_RANGE_CIRCLE  99
 
 // Configurações do jogo
 const int PLAYER_STARTING_GOLD = 200;

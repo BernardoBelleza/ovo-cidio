@@ -591,13 +591,8 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     
     // ===== TORRES =====
     printf("\n[TORRES]\n");
-    LoadSingleModel("../../data/models/towers/Low_Poly_Chicken.obj", "chicken_tower");
-    LoadSingleModel("../../data/models/towers/Mesh_Beagle.obj", "beagle_tower");
-    
-    // ===== ARMAS =====
-    printf("\n[ARMAS]\n");
-    LoadSingleModel("../../data/models/guns/M1A1_thompson.obj", "thompson_gun");
-    LoadSingleModel("../../data/models/guns/ak47_2.obj", "ak47");
+    LoadSingleModel("../../data/models/towers/chicken-thompson.obj", "chicken_tower");
+    LoadSingleModel("../../data/models/towers/beagle-ak47.obj", "beagle_tower");
     
     // ===== INIMIGOS =====
     printf("\n[INIMIGOS]\n");
