@@ -165,30 +165,36 @@ struct EnemyRenderInfo {
     float scaleX, scaleY, scaleZ;
     float yOffset;
     const char* meshName;
+    float collisionRadius; // Adicione esta linha
+
 };
 
 const EnemyRenderInfo WOLF_RENDER = {
     0.005f, 0.005f, 0.005f,
     0.4f,
-    "Geo_Wolf"
+    "Geo_Wolf",
+    0.5f
 };
 
 const EnemyRenderInfo HAWK_RENDER = {
     0.15f, 0.15f, 0.15f,
     2.0f,
-    "FerruginousHawk_Mesh"
+    "FerruginousHawk_Mesh",
+    0.3f
 };
 
 const EnemyRenderInfo FOX_RENDER = {
     0.1f, 0.1f, 0.1f,
     0.0f,
-    "Fox_Mesh"
+    "Fox_Mesh",
+    0.4f
 };
 
 const EnemyRenderInfo RAT_RENDER = {
     0.1f, 0.1f, 0.1f,
     0.0f,
-    "KangarooRats_Mesh"
+    "KangarooRats_Mesh",
+    0.3f
 };
 
 const float ENEMY_BEZIER_SMOOTHNESS = 0.3f;

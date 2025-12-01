@@ -1,6 +1,9 @@
 #include "projectile_system.h"
 #include "matrices.h"
 #include "game_attributes.h"
+#include "hud.h"
+#include "collisions.h"
+#include "enemy_system.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
@@ -9,6 +12,7 @@
 extern void DrawVirtualObject(const char* object_name);
 extern GLint g_model_uniform;
 extern GLint g_object_id_uniform;
+extern std::vector<Enemy> g_Enemies;
 
 // Lista de projéteis
 std::vector<Projectile> g_Projectiles;
@@ -21,8 +25,6 @@ void SpawnProjectile(glm::vec3 startPos, glm::vec3 direction, float damage) {
     Projectile p;
     p.position = startPos;
     p.direction = glm::normalize(direction);
-    printf("Spawned projectile at (%.2f, %.2f, %.2f) with direction (%.2f, %.2f, %.2f)\n", 
-           startPos.x, startPos.y, startPos.z, direction.x, direction.y, direction.z);
     p.damage = damage;
     p.speed = 10.0f;
     p.active = true;
@@ -42,6 +44,7 @@ void UpdateProjectiles(float deltaTime) {
             p.active = false;
         }
     }
+    CheckProjectileCollisions();
 }
 
 void DrawAllProjectils() {
@@ -58,3 +61,48 @@ void DrawAllProjectils() {
     }
 }
 
+void CheckProjectileCollisions() {
+    const float PROJECTILE_RADIUS = 0.2f; // Raio do ovo
+    
+    for (auto& projectile : g_Projectiles) {
+        if (!projectile.active) continue;
+        
+        // Cria esfera de colisão para o projétil
+        Sphere projectileSphere = CreateSphere(projectile.position, PROJECTILE_RADIUS);
+        
+        for (auto& enemy : g_Enemies) {
+            if (!enemy.active || enemy.health <= 0.0f) continue;
+            
+            // Calcula posição de renderização do inimigo (com yOffset)
+            const EnemyRenderInfo& renderInfo = GetEnemyRenderInfo(enemy.type);
+            glm::vec3 enemyRenderPos = glm::vec3(
+                enemy.position.x,
+                enemy.position.y + renderInfo.yOffset,
+                enemy.position.z
+            );
+            
+            // Cria esfera de colisão para o inimigo
+            Sphere enemySphere = CreateSphere(enemyRenderPos, renderInfo.collisionRadius);
+            
+            // TESTE DE COLISÃO ESFERA-ESFERA
+            if (TestSphereSphere(projectileSphere, enemySphere)) {
+                // Aplica dano
+                enemy.health -= projectile.damage;
+                
+               
+                // Desativa projétil
+                projectile.active = false;
+                
+                // Se o inimigo morreu
+                if (enemy.health <= 0.0f) {
+                    const EnemyAttributes& attrs = GetEnemyAttributes(enemy.type);
+                    AddMoney(attrs.goldReward);
+                         
+                    enemy.active = false;
+                }
+                
+                break; 
+            }
+        }
+    }
+}

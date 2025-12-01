@@ -498,7 +498,7 @@ void TowerShoot(Tower& tower) {
     if (tower.cooldownTimer > 0.0f) return;
 
     glm::vec3 spawnPos = tower.physics.position; // Posicao da torre é a posição inicial do projetil
-    spawnPos.y += 0.5f; 
+    //spawnPos.y += 0.5f; 
 
 
     SpawnProjectile(spawnPos, tower.physics.direction, tower.attackDamage);

@@ -20,4 +20,6 @@ void SpawnProjectile(glm::vec3 startPos, glm::vec3 direction, float damage);
 void UpdateProjectiles(float deltaTime);
 void DrawAllProjectils();
 
+void CheckProjectileCollisions();
+
 #endif // PROJECTILE_SYSTEM_H
