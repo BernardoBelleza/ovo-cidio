@@ -21,6 +21,8 @@ void SpawnProjectile(glm::vec3 startPos, glm::vec3 direction, float damage) {
     Projectile p;
     p.position = startPos;
     p.direction = glm::normalize(direction);
+    printf("Spawned projectile at (%.2f, %.2f, %.2f) with direction (%.2f, %.2f, %.2f)\n", 
+           startPos.x, startPos.y, startPos.z, direction.x, direction.y, direction.z);
     p.damage = damage;
     p.speed = 10.0f;
     p.active = true;

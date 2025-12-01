@@ -34,4 +34,6 @@ bool IsWaveActive();
 bool IsWaveComplete();
 int GetCurrentWaveNumber();
 
+const EnemyRenderInfo& GetEnemyRenderInfo(EnemyType type); 
+
 #endif // ENEMY_SYSTEM_H

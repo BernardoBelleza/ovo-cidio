@@ -9,6 +9,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "projectile_system.h"
+#include "enemy_system.h"
 
 // ============================================================================
 // DECLARAÇÕES EXTERNAS (funções e variáveis definidas em main.cpp)
@@ -448,7 +449,7 @@ void UpdateTowerTargeting(Tower& tower, float deltaTime) {
     // Variável para guardar a posição do mais avançado
     float maxProgress = -1.0f; 
 
-    glm::vec3 towerPos = glm::vec3(tower.physics.position.x, 0.0f, tower.physics.position.z);
+    glm::vec3 towerPos = glm::vec3(tower.physics.position.x, tower.physics.position.y, tower.physics.position.z);
 
     for (size_t i = 0; i < g_Enemies.size(); i++) {
         Enemy& enemy = g_Enemies[i];
@@ -457,7 +458,7 @@ void UpdateTowerTargeting(Tower& tower, float deltaTime) {
         if (!enemy.active || enemy.health <= 0.0f) 
             continue;
 
-        glm::vec3 enemyPos = glm::vec3(enemy.position.x, 0.0f, enemy.position.z);
+        glm::vec3 enemyPos = glm::vec3(enemy.position.x, enemy.position.y, enemy.position.z);
         float dist = glm::distance(towerPos, enemyPos);
 
         if (dist <= tower.attackRange) {
@@ -473,8 +474,16 @@ void UpdateTowerTargeting(Tower& tower, float deltaTime) {
 
     // Alterando direção da mira (se houver inimigo)
     if (target != nullptr) {
-        glm::vec3 dirToEnemy = target->position - tower.physics.position;
-        dirToEnemy.y = 0.0f; 
+        // Mantemos a direção y para o tiro subir/descer nos inimigos voadores ou pequenos
+
+        const EnemyRenderInfo& renderInfo = GetEnemyRenderInfo(target->type);
+        glm::vec3 targetRenderPos = glm::vec3(
+            target->position.x,
+            target->position.y + renderInfo.yOffset,
+            target->position.z
+        );
+        
+        glm::vec3 dirToEnemy = targetRenderPos - tower.physics.position;
 
         // Eles não devem estar na mesma posição, mas garantimos que não ocorrerá divisão por 0        
         if (glm::length(dirToEnemy) > 0.01f) {
@@ -501,3 +510,5 @@ void TowerShoot(Tower& tower) {
         tower.cooldownTimer = 1.0f;
     }
 }
+
+

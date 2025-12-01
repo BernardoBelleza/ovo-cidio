@@ -198,7 +198,7 @@ static const EnemyAttributes& GetEnemyAttributes(EnemyType type) {
     }
 }
 
-static const EnemyRenderInfo& GetEnemyRenderInfo(EnemyType type) {
+const EnemyRenderInfo& GetEnemyRenderInfo(EnemyType type) {
     switch(type) {
         case ENEMY_WOLF: return WOLF_RENDER;
         case ENEMY_HAWK: return HAWK_RENDER;
@@ -302,7 +302,8 @@ void DrawAllEnemies() {
         glm::mat4 model = Matrix_Translate(enemy.position.x, enemy.position.y + renderInfo.yOffset, enemy.position.z)
                         * Matrix_Rotate_Y(angle)
                         * Matrix_Scale(renderInfo.scaleX, renderInfo.scaleY, renderInfo.scaleZ);
-        
+        printf("[ENEMY] Desenhando inimigo em (%.2f, %.2f, %.2f) com angulo %.2f\n", 
+               enemy.position.x, enemy.position.y + renderInfo.yOffset, enemy.position.z, angle);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, modelID);
         DrawVirtualObject(renderInfo.meshName);
