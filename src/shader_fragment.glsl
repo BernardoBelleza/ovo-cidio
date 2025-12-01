@@ -42,6 +42,9 @@ uniform mat4 projection;
 // Tower Range Circle
 #define TOWER_RANGE_CIRCLE  99
 
+// Projetil
+#define MODEL_EGG          50
+
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -59,6 +62,7 @@ uniform sampler2D texture_hawk;
 uniform sampler2D texture_fox;
 uniform sampler2D texture_wolf;
 uniform sampler2D texture_rat;
+uniform sampler2D texture_egg;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -183,6 +187,12 @@ void main()
     else if ( object_id == TOWER_RANGE_CIRCLE )
     {
         Kd0 = vec3(1.0, 1.0, 0.0); // Amarelo
+    }
+    else if ( object_id == MODEL_EGG )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(texture_egg, vec2(U, V)).rgb; 
     }
 
     // Equação de Iluminação

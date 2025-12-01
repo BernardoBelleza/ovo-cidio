@@ -36,6 +36,7 @@
 #include "chicken_coop_system.h"
 #include "hud.h"
 #include "enemy_system.h"
+#include "projectile_system.h"
 
 // Declaração de funções auxiliares para renderizar texto dentro da janela
 // OpenGL. Estas funções estão definidas no arquivo "textrendering.cpp".
@@ -247,6 +248,7 @@ int main(int argc, char* argv[])
         UpdateAllTowersPhysics(deltaTime);
         UpdateAllEnemies(deltaTime);
         UpdateWaveSystem(deltaTime);
+        UpdateProjectiles(deltaTime);
         
         // Aqui executamos as operações de renderização
 
@@ -829,6 +831,8 @@ void LoadGameResources()
     LoadTextureImage("../../data/textures/enemies/fox.png");
     LoadTextureImage("../../data/textures/enemies/wolf.png");
     LoadTextureImage("../../data/textures/enemies/rat.png");
+    LoadTextureImage("../../data/textures/projectile/Egg.png");
+
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -902,6 +906,9 @@ void RenderScene(GLFWwindow* window, const glm::mat4& view, const glm::mat4& pro
     DrawChickenCoops();
     DrawTowerRangeCircle();
     DrawAllEnemies();
+
+    // Desenhemoa todos projeteis
+    DrawAllProjectils();
 
     // Imprimimos na tela informação sobre o número de quadros renderizados
     // por segundo (frames per second).

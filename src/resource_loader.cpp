@@ -329,6 +329,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_fox"), 7);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_wolf"), 8);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_rat"), 9);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_egg"), 10);
+    
     glUseProgram(0);
 }
 
@@ -607,7 +609,8 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     LoadSingleModel("../../data/models/enemies/rat/rat.obj", "rat");
     
     // ===== PROJETEIS ===
-    printf("\n[PROJETEIS]\n");
+    printf("\n[PROJETIL]\n");
+    LoadSingleModel("../../data/models/projectile/Egg.obj", "egg");
     
     
     // ===== AMBIENTE =====

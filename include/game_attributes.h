@@ -39,6 +39,9 @@ const int MAP_SIZE = 15;
 #define MODEL_WOLF           32
 #define MODEL_RAT            33
 
+
+#define MODEL_EGG 50
+
 // Configurações do jogo
 const int PLAYER_STARTING_GOLD = 200;
 const int PLAYER_STARTING_LIVES = 20;

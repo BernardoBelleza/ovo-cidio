@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "projectile_system.h"
 
 // ============================================================================
 // DECLARAÇÕES EXTERNAS (funções e variáveis definidas em main.cpp)
@@ -65,6 +66,7 @@ void InitializeTowers() {
         g_Towers[i].attackDamage = 10.0f;
         g_Towers[i].attackSpeed = 1.0f;
         g_Towers[i].type = TOWER_CHICKEN;
+        g_Towers[i].cooldownTimer = 0.0f;
     }
 
 
@@ -112,6 +114,7 @@ bool AddTower(int gridX, int gridZ, TowerType type) {
     g_Towers[g_TowerCount].attackDamage = 10.0f;
     g_Towers[g_TowerCount].attackSpeed = 1.0f;
     g_Towers[g_TowerCount].type = type;
+    g_Towers[g_TowerCount].cooldownTimer = 0.0f;
     
 
     // Inicializa direcao da torre
@@ -161,7 +164,7 @@ void UpdateAllTowersPhysics(float deltaTime) {
     for (int i = 0; i < g_TowerCount; i++) {
         if (g_Towers[i].active) {
             UpdatePhysics(g_Towers[i].physics, deltaTime);
-            UpdateTowerTargeting(g_Towers[i]);
+            UpdateTowerTargeting(g_Towers[i], deltaTime);
         }
     }
 }
@@ -434,29 +437,33 @@ glm::vec3 GetDirectionToNearestPath(int originX, int originZ, float range) {
     }
 }
 
-void UpdateTowerTargeting(Tower& tower) {
+void UpdateTowerTargeting(Tower& tower, float deltaTime) {
+    
+    if (tower.cooldownTimer > 0.0f) {
+        tower.cooldownTimer -= deltaTime;
+    }
+
     Enemy* target = nullptr;
     
-    // Variável para guardar o mais avançado
+    // Variável para guardar a posição do mais avançado
     float maxProgress = -1.0f; 
 
     glm::vec3 towerPos = glm::vec3(tower.physics.position.x, 0.0f, tower.physics.position.z);
 
-    // Percorre a lista de inimigos 
     for (size_t i = 0; i < g_Enemies.size(); i++) {
         Enemy& enemy = g_Enemies[i];
 
         // Se o inimigo não existir mais ou estiver morto, ignoramos
-        if (!enemy.active || enemy.health <= 0.0f) continue;
+        if (!enemy.active || enemy.health <= 0.0f) 
+            continue;
 
         glm::vec3 enemyPos = glm::vec3(enemy.position.x, 0.0f, enemy.position.z);
         float dist = glm::distance(towerPos, enemyPos);
 
         if (dist <= tower.attackRange) {
-            // Soma dos progressos pela posição no Path dos inimigos
+            // Soma do progresso no caminho pelo caminho total e caminho parcial
             float totalProgress = (float)enemy.currentPathIndex + enemy.pathProgress;
 
-            // Se esse inimigo está mais avançado, ele vira o novo alvo
             if (totalProgress > maxProgress) {
                 maxProgress = totalProgress;
                 target = &enemy;
@@ -464,14 +471,33 @@ void UpdateTowerTargeting(Tower& tower) {
         }
     }
 
-    // Alterando direção da mira (se houver inimiog)
+    // Alterando direção da mira (se houver inimigo)
     if (target != nullptr) {
         glm::vec3 dirToEnemy = target->position - tower.physics.position;
         dirToEnemy.y = 0.0f; 
 
-        // Eles não devem estar na mesma posição, mas aqui garantimos que não ocorrerá divisão por 0        
+        // Eles não devem estar na mesma posição, mas garantimos que não ocorrerá divisão por 0        
         if (glm::length(dirToEnemy) > 0.01f) {
             tower.physics.direction = glm::normalize(dirToEnemy);
         }
+        TowerShoot(tower);
     } 
+}
+
+
+void TowerShoot(Tower& tower) {
+    if (tower.cooldownTimer > 0.0f) return;
+
+    glm::vec3 spawnPos = tower.physics.position; // Posicao da torre é a posição inicial do projetil
+    spawnPos.y += 0.5f; 
+
+
+    SpawnProjectile(spawnPos, tower.physics.direction, tower.attackDamage);
+
+    // Reset timer
+    if (tower.attackSpeed > 0.0f) {
+        tower.cooldownTimer = 1.0f / tower.attackSpeed;
+    } else {
+        tower.cooldownTimer = 1.0f;
+    }
 }

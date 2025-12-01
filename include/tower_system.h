@@ -36,6 +36,7 @@ struct Tower {
     float attackDamage;      // Dano do ataque
     float attackSpeed;       // Velocidade de ataque (ataques por segundo)
     TowerType type;          // Tipo da torre (galinha ou beagle)
+    float cooldownTimer;              // Temporizador para controle de ataque
 };
 
 // ============================================================================
@@ -92,12 +93,14 @@ void ShowTowerInfo(int towerIndex);
 glm::vec3 GetDirectionToNearestPath(int originX, int originZ, float range);
 
 // Busca a direção do inimigo mais adiantado dentro do alcance
-void UpdateTowerTargeting(Tower& tower);
+void UpdateTowerTargeting(Tower& tower, float deltaTime);
+void TowerShoot(Tower& tower);
 
 // Sistema de compra
 void OpenTowerMenu(int gridX, int gridZ);
 void CloseTowerMenu();
 void BuyTower(TowerType type);
 void ShowTowerMenuOnScreen();
+
 
 #endif // TOWER_SYSTEM_H
