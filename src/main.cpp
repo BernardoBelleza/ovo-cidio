@@ -98,31 +98,7 @@ float g_CameraTheta_Free = M_PI; // Começa olhando para -Z
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-// ============================================================================
-// SISTEMA DE ARMA ANEXADA
-// ============================================================================
-struct AttachedWeapon {
-    glm::vec3 offset;        // Posição relativa ao objeto principal
-    glm::vec3 rotation;      // Rotação (Euler angles em radianos)
-    glm::vec3 scale;         // Escala relativa
-    bool enabled;            // Se a arma está visível
-};
 
-// Arma equipada na galinha (ajustar esses valores com as teclas I/J/K/L/U/O)
-AttachedWeapon g_ChickenWeapon = {
-    glm::vec3(-1.60f, 9.00f, 2.60f), // offset (X, Y, Z) - posição ajustada
-    glm::vec3(0.0f, 0.0f, 0.0f),     // rotation
-    glm::vec3(14.0f, 14.0f, 14.0f),     // scale
-    true                              // enabled
-};
-
-// Arma equipada no beagle (AK47)
-AttachedWeapon g_BeagleWeapon = {
-    glm::vec3(-1.60f, 9.00f, 2.60f),     // offset (ajustar conforme necessário)
-    glm::vec3(0.0f, 1.45f, 0.0f),     // rotation
-    glm::vec3(0.2f, 0.2f, 0.2f),     // scale
-    true                              // enabled
-};
 
 CellType g_MapGrid[MAP_HEIGHT][MAP_WIDTH];
 
@@ -581,14 +557,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_UseFreeCamera = !g_UseFreeCamera;
         printf("Camera: %s\n", g_UseFreeCamera ? "LIVRE (WASD)" : "LOOK-AT");
     }
-
-    // Tecla T: Toggle arma (mostra/esconde)
-    if (key == GLFW_KEY_T && action == GLFW_PRESS)
-    {
-        g_ChickenWeapon.enabled = !g_ChickenWeapon.enabled;
-        printf("Arma: %s\n", g_ChickenWeapon.enabled ? "VISÍVEL" : "ESCONDIDA");
-    }
-    
     // Tecla E: Spawna um lobo (teste de inimigos)
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
@@ -626,43 +594,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     {
         SpawnEnemy(ENEMY_RAT);
         printf("[TESTE] Rato spawnado!\n");
-    }
-
-    // ===== AJUSTAR POSIÇÃO DA ARMA (TECLAS I, K, J, L, U, O) =====
-    float offset_step = 0.05f;
-    bool weapon_adjusted = false;
-    
-    if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.y += offset_step;  // Cima
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.y -= offset_step;  // Baixo
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_J && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.x -= offset_step;  // Esquerda
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.x += offset_step;  // Direita
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_U && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.z += offset_step;  // Frente
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.z -= offset_step;  // Trás
-        weapon_adjusted = true;
-    }
-    
-    // Imprime valores atuais quando ajustado
-    if (weapon_adjusted) {
-        printf("Weapon offset: (%.2f, %.2f, %.2f)\n", 
-               g_ChickenWeapon.offset.x, 
-               g_ChickenWeapon.offset.y, 
-               g_ChickenWeapon.offset.z);
     }
 
     // ===== CONTROLES DA CÂMERA LIVRE (WASD) =====
@@ -824,17 +755,16 @@ void LoadGameResources()
     LoadTextureImage("../../data/textures/grid/grass.jpg");
     LoadTextureImage("../../data/textures/grid/path.jpg");
     LoadTextureImage("../../data/textures/towers/chicken.png");
-    LoadTextureImage("../../data/textures/guns/m1a1/thompson.png");
+    LoadTextureImage("../../data/textures/guns/thompson.png");
     LoadTextureImage("../../data/textures/towers/beagle.png");
-    LoadTextureImage("../../data/textures/guns/ak47/ak47.jpg");
+    LoadTextureImage("../../data/textures/guns/ak47.jpg");
     LoadTextureImage("../../data/textures/enemies/hawk.png");
     LoadTextureImage("../../data/textures/enemies/fox.png");
     LoadTextureImage("../../data/textures/enemies/wolf.png");
     LoadTextureImage("../../data/textures/enemies/rat.png");
     LoadTextureImage("../../data/textures/projectile/Egg.png");
 
-
-    ObjModel planemodel("../../data/plane.obj");
+    ObjModel planemodel("../../data/models/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 

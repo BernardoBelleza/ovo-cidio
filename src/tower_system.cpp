@@ -20,18 +20,6 @@ extern glm::vec3 GridToWorld(int gridX, int gridZ);
 extern glm::ivec2 WorldToGrid(glm::vec3 worldPos);
 extern float GetGroundHeight(int gridX, int gridZ);
 
-// IDs dos modelos já estão definidos em resource_loader.h como #defines
-
-// Estrutura de arma anexada (definida em main.cpp)
-struct AttachedWeapon {
-    glm::vec3 offset;
-    glm::vec3 rotation;
-    glm::vec3 scale;
-    bool enabled;
-};
-extern AttachedWeapon g_ChickenWeapon;
-extern AttachedWeapon g_BeagleWeapon;
-
 // ============================================================================
 // VARIÁVEIS GLOBAIS DO SISTEMA DE TORRES
 // ============================================================================
@@ -170,7 +158,7 @@ void UpdateAllTowersPhysics(float deltaTime) {
     }
 }
 
-void DrawChickenWithWeapon(glm::vec3 position, glm::vec3 direction, bool drawWeapon) {
+void DrawChickenTower(glm::vec3 position, glm::vec3 direction) {
     // Aplica offset Y para ajustar a base do modelo
     position.y += CHICKEN_Y_OFFSET;
     
@@ -178,86 +166,45 @@ void DrawChickenWithWeapon(glm::vec3 position, glm::vec3 direction, bool drawWea
 
     // Matriz de transformação da galinha
     glm::mat4 chickenModel = Matrix_Translate(position.x, position.y, position.z)
-                           * Matrix_Scale(0.05f, 0.05f, 0.05f)
+                           * Matrix_Scale(0.025f, 0.025f, 0.025f)
                            * Matrix_Rotate_Y(angle);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(chickenModel));
+
     glUniform1i(g_object_id_uniform, MODEL_CHICKEN_TOWER);
-    DrawVirtualObject("Low_Poly_Chicken_v1_001");
-    
-    // Desenha a arma se estiver habilitada
-    if (drawWeapon && g_ChickenWeapon.enabled) {
-        // Matriz de transformação da Thompson (aplicada à matriz da galinha)
-        glm::mat4 weaponModel = chickenModel
-                              * Matrix_Translate(g_ChickenWeapon.offset.x, 
-                                                g_ChickenWeapon.offset.y, 
-                                                g_ChickenWeapon.offset.z)
-                              * Matrix_Rotate_X(g_ChickenWeapon.rotation.x)
-                              * Matrix_Rotate_Y(g_ChickenWeapon.rotation.y)
-                              * Matrix_Rotate_Z(g_ChickenWeapon.rotation.z)
-                              * Matrix_Scale(g_ChickenWeapon.scale.x, 
-                                            g_ChickenWeapon.scale.y, 
-                                            g_ChickenWeapon.scale.z);
-        
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(weaponModel));
-        glUniform1i(g_object_id_uniform, MODEL_THOMPSON_GUN);
-        
-        // Desenha todas as partes da Thompson
-        DrawVirtualObject("stock_Cube.010");
-        DrawVirtualObject("M1A1_Cube.019");
-        DrawVirtualObject("bolt_Cube.029");
-        DrawVirtualObject("mag_Cube.030");
-        DrawVirtualObject("magRelease_Plane.003");
-        DrawVirtualObject("fireSelect_Cylinder.019");
-        DrawVirtualObject("trigger_Cube.031");
-        DrawVirtualObject("safety_Cylinder.025");
-    }
+    DrawVirtualObject("chicken_VRay");
+
+    glUniform1i(g_object_id_uniform, MODEL_THOMPSON_GUN);
+    DrawVirtualObject("gun_M1A1");
 }
 
-void DrawBeagleWithWeapon(glm::vec3 position, glm::vec3 direction, bool drawWeapon) {
+void DrawBeagleTower(glm::vec3 position, glm::vec3 direction) {
     position.y += BEAGLE_Y_OFFSET;
 
     float angle = atan2f(direction.x, direction.z);
     // Matriz de transformação do beagle
     glm::mat4 beagleModel = Matrix_Translate(position.x, position.y, position.z)
-                          * Matrix_Scale(0.01f, 0.01f, 0.01f)
+                          * Matrix_Scale(0.0055f, 0.0055f, 0.0055f)
                           * Matrix_Rotate_Y(angle);
     
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(beagleModel));
-    glUniform1i(g_object_id_uniform, MODEL_BEAGLE_TOWER);
-    DrawVirtualObject("Geo_Beagle");
-    
-    // Desenha a AK47 se estiver habilitada
-    if (drawWeapon && g_BeagleWeapon.enabled) {
-        // Matriz de transformação da AK47 (aplicada à matriz do beagle)
-        glm::mat4 weaponModel = beagleModel
-                              * Matrix_Translate(g_BeagleWeapon.offset.x, 
-                                                g_BeagleWeapon.offset.y, 
-                                                g_BeagleWeapon.offset.z)
-                              * Matrix_Rotate_X(g_BeagleWeapon.rotation.x)
-                              * Matrix_Rotate_Y(g_BeagleWeapon.rotation.y)
-                              * Matrix_Rotate_Z(g_BeagleWeapon.rotation.z)
-                              * Matrix_Scale(g_BeagleWeapon.scale.x, 
-                                            g_BeagleWeapon.scale.y, 
-                                            g_BeagleWeapon.scale.z);
-        
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(weaponModel));
-        glUniform1i(g_object_id_uniform, MODEL_AK47);
 
-        DrawVirtualObject("Box003");
-    }
+    glUniform1i(g_object_id_uniform, MODEL_BEAGLE_TOWER);
+    DrawVirtualObject("beagle");
+
+    glUniform1i(g_object_id_uniform, MODEL_AK47);
+    DrawVirtualObject("gun_AK47");
 }
 
 void DrawAllTowers() {
     for (int i = 0; i < g_TowerCount; i++) {
         if (!g_Towers[i].active)
             continue;
-        
-        // Desenha a torre de acordo com seu tipo
+
         if (g_Towers[i].type == TOWER_CHICKEN) {
-            DrawChickenWithWeapon(g_Towers[i].physics.position, g_Towers[i].physics.direction, true);
+            DrawChickenTower(g_Towers[i].physics.position, g_Towers[i].physics.direction);
         } else if (g_Towers[i].type == TOWER_BEAGLE) {
-            DrawBeagleWithWeapon(g_Towers[i].physics.position, g_Towers[i].physics.direction, true);
+            DrawBeagleTower(g_Towers[i].physics.position, g_Towers[i].physics.direction);
         }
     }
 }
@@ -268,19 +215,16 @@ bool CanPlaceTower(int gridX, int gridZ) {
     return g_MapGrid[gridZ][gridX] == CELL_EMPTY;
 }
 
-// Seleciona torre exatamente na posição do grid clicado
 int SelectTowerAtPosition(int gridX, int gridZ) {
-    // Procura torre exatamente na posição clicada
     for (int i = 0; i < g_TowerCount; i++) {
         if (g_Towers[i].active && g_Towers[i].gridX == gridX && g_Towers[i].gridZ == gridZ) {
             return i;
         }
     }
     
-    return -1; // Nenhuma torre encontrada nesta posição
+    return -1;
 }
 
-// Desenha círculo de alcance ao redor da torre selecionada
 void DrawTowerRangeCircle() {
     if (g_SelectedTowerIndex < 0 || g_SelectedTowerIndex >= g_TowerCount)
         return;
@@ -308,12 +252,11 @@ void DrawTowerRangeCircle() {
                         * Matrix_Scale(0.05f, 0.05f, 0.05f);
         
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, 99); // ID para círculo amarelo
+        glUniform1i(g_object_id_uniform, TOWER_RANGE_CIRCLE);
         DrawVirtualObject("the_plane");
     }
 }
 
-// Exibe informações da torre selecionada no console
 void ShowTowerInfo(int towerIndex) {
     if (towerIndex < 0 || towerIndex >= g_TowerCount)
         return;
@@ -495,11 +438,10 @@ void UpdateTowerTargeting(Tower& tower, float deltaTime) {
 
 
 void TowerShoot(Tower& tower) {
-    if (tower.cooldownTimer > 0.0f) return;
+    if (tower.cooldownTimer > 0.0f) 
+        return;
 
     glm::vec3 spawnPos = tower.physics.position; // Posicao da torre é a posição inicial do projetil
-    //spawnPos.y += 0.5f; 
-
 
     SpawnProjectile(spawnPos, tower.physics.direction, tower.attackDamage);
 

@@ -1,7 +1,7 @@
 # Blender v2.93.4 OBJ File: 'Chicken Coop.blend'
 # www.blender.org
 mtllib ChickenCoop.mtl
-o Cube.011_Cube.012
+o ChickenCoop
 v 1.000000 1.847899 5.926597
 v -1.000000 1.847899 5.926597
 v 1.000000 1.493024 6.719258

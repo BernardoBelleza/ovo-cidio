@@ -45,48 +45,37 @@ struct Tower {
 
 extern Tower g_Towers[MAX_TOWERS];
 extern int g_TowerCount;
-extern int g_SelectedTowerIndex;  // Índice da torre selecionada (-1 = nenhuma)
+extern int g_SelectedTowerIndex;
 
 // Sistema de compra
-extern bool g_ShowTowerMenu;      // Se o menu de compra está aberto
-extern int g_MenuGridX;           // Grid X onde o menu foi aberto
-extern int g_MenuGridZ;           // Grid Z onde o menu foi aberto
+extern bool g_ShowTowerMenu;
+extern int g_MenuGridX;
+extern int g_MenuGridZ;
 
 // ============================================================================
 // FUNÇÕES DO SISTEMA DE TORRES
 // ============================================================================
 
-// Inicializa o sistema de torres
 void InitializeTowers();
 
-// Adiciona uma nova torre na posição especificada do grid
 bool AddTower(int gridX, int gridZ, TowerType type);
 
-// Atualiza a física de um objeto (gravidade e colisão)
 void UpdatePhysics(PhysicsObject& obj, float deltaTime);
 
-// Atualiza a física de todas as torres
 void UpdateAllTowersPhysics(float deltaTime);
 
-// Desenha uma galinha com arma anexada
-void DrawChickenWithWeapon(glm::vec3 position, bool drawWeapon = true);
+void DrawChickenTower(glm::vec3 position, glm::vec3 direction);
 
-// Desenha um beagle com arma anexada
-void DrawBeagleWithWeapon(glm::vec3 position, bool drawWeapon = true);
+void DrawBeagleTower(glm::vec3 position, glm::vec3 direction);
 
-// Desenha todas as torres ativas
 void DrawAllTowers();
 
-// Verifica se pode colocar torre em uma posição
 bool CanPlaceTower(int gridX, int gridZ);
 
-// Seleciona torre mais próxima de uma posição no grid
 int SelectTowerAtPosition(int gridX, int gridZ);
 
-// Desenha círculo de alcance da torre selecionada
 void DrawTowerRangeCircle();
 
-// Exibe informações da torre selecionada
 void ShowTowerInfo(int towerIndex);
 
 // Busca a direçaoo da torre para o caminho mais próximo que ela encontrar
