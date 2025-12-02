@@ -36,12 +36,14 @@ void UpdateProjectiles(float deltaTime) {
     for (auto& p : g_Projectiles) {
         if (!p.active) 
             continue;
+        // Chão é hardcoded com o plano Y=0
+        Plane groundPlane = CreatePlane(glm::vec3(0, 1, 0), glm::vec3(0, 0, 0));
 
         p.position += p.direction * p.speed * deltaTime;
 
-        // Desativa projetil depois de alguma distância TODO: limitar isso melhor, por exemplo, pelo range ou tempo
-        if (p.position.x < -50 || p.position.x > 50 || p.position.z < -50 || p.position.z > 50) {
-            p.active = false;
+        Sphere projectileSphere = CreateSphere(p.position, 0.2f);
+        if (TestSpherePlane(projectileSphere, groundPlane)) {
+            p.active = false; // Projétil atingiu o chão
         }
     }
     CheckProjectileCollisions();

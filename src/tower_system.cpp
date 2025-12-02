@@ -10,7 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "projectile_system.h"
 #include "enemy_system.h"
-
+#include "collisions.h"
 // ============================================================================
 // DECLARAÇÕES EXTERNAS (funções e variáveis definidas em main.cpp)
 // ============================================================================
@@ -396,15 +396,14 @@ void UpdateTowerTargeting(Tower& tower, float deltaTime) {
 
     for (size_t i = 0; i < g_Enemies.size(); i++) {
         Enemy& enemy = g_Enemies[i];
+        Sphere towerRange = CreateSphere(towerPos, tower.attackRange);
 
         // Se o inimigo não existir mais ou estiver morto, ignoramos
         if (!enemy.active || enemy.health <= 0.0f) 
             continue;
 
-        glm::vec3 enemyPos = glm::vec3(enemy.position.x, enemy.position.y, enemy.position.z);
-        float dist = glm::distance(towerPos, enemyPos);
+        if (TestPointSphere(enemy.position, towerRange)) {
 
-        if (dist <= tower.attackRange) {
             // Soma do progresso no caminho pelo caminho total e caminho parcial
             float totalProgress = (float)enemy.currentPathIndex + enemy.pathProgress;
 
