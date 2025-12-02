@@ -9,8 +9,9 @@
 const float GRAVITY = -9.8f;
 const float DAMPING = 0.6f;
 const float MIN_VELOCITY = 0.05f;
-const float CHICKEN_Y_OFFSET = -0.43f;
-const float BEAGLE_Y_OFFSET = 0.15f;
+const float CHICKEN_Y_OFFSET = -0.35f;
+const float BEAGLE_Y_OFFSET = -0.05f;
+const float BEAGLE_Z_OFFSET = 0.2f;
 
 // Mapa
 const int MAP_WIDTH = 15;
@@ -38,6 +39,12 @@ const int MAP_SIZE = 15;
 #define MODEL_FOX            31
 #define MODEL_WOLF           32
 #define MODEL_RAT            33
+
+
+#define MODEL_EGG 50
+
+// Círculo de alcance da torre
+#define TOWER_RANGE_CIRCLE  99
 
 // Configurações do jogo
 const int PLAYER_STARTING_GOLD = 200;
@@ -162,30 +169,36 @@ struct EnemyRenderInfo {
     float scaleX, scaleY, scaleZ;
     float yOffset;
     const char* meshName;
+    float collisionRadius; // Adicione esta linha
+
 };
 
 const EnemyRenderInfo WOLF_RENDER = {
     0.005f, 0.005f, 0.005f,
     0.4f,
-    "Geo_Wolf"
+    "Geo_Wolf",
+    0.5f
 };
 
 const EnemyRenderInfo HAWK_RENDER = {
     0.15f, 0.15f, 0.15f,
     2.0f,
-    "FerruginousHawk_Mesh"
+    "FerruginousHawk_Mesh",
+    0.3f
 };
 
 const EnemyRenderInfo FOX_RENDER = {
     0.1f, 0.1f, 0.1f,
     0.0f,
-    "Fox_Mesh"
+    "Fox_Mesh",
+    0.4f
 };
 
 const EnemyRenderInfo RAT_RENDER = {
     0.1f, 0.1f, 0.1f,
     0.0f,
-    "KangarooRats_Mesh"
+    "KangarooRats_Mesh",
+    0.3f
 };
 
 const float ENEMY_BEZIER_SMOOTHNESS = 0.3f;

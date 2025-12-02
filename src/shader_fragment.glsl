@@ -44,6 +44,9 @@ uniform mat4 projection;
 // Tower Range Circle
 #define TOWER_RANGE_CIRCLE  99
 
+// Projetil
+#define MODEL_EGG          50
+
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -62,6 +65,7 @@ uniform sampler2D texture_hawk;
 uniform sampler2D texture_fox;
 uniform sampler2D texture_wolf;
 uniform sampler2D texture_rat;
+uniform sampler2D texture_egg;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -119,7 +123,7 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_thompson, vec2(U, V)).rgb;
-        Ks0 = vec3(0.8, 0.8, 0.8);   
+        Ks0 = Kd0 * 0.8; 
         q = 10.0;
     }
     else if ( object_id == MODEL_BEAGLE_TOWER )
@@ -133,7 +137,7 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_ak47, vec2(U, V)).rgb;
-        Ks0 = vec3(0.8, 0.8, 0.8);   
+        Ks0 = Kd0 * 0.8;
         q = 10.0;
 
  }
@@ -201,6 +205,14 @@ void main()
     {
         Kd0 = vec3(1.0, 1.0, 0.0); // Amarelo
     }
+    else if ( object_id == MODEL_EGG )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(texture_egg, vec2(U, V)).rgb;
+        Ks0 = Kd0 * 0.3;
+        q = 10.0;
+    }
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
@@ -208,7 +220,7 @@ void main()
     vec3 phong_specular_term  = Ks0 * I * pow(max(dot(n, h), 0.0),q); 
 
 
-    if(object_id == MODEL_FOX || object_id == MODEL_CHICKEN_COOP){
+    if(object_id == MODEL_CHICKEN_COOP){ // Tentando deixar mais "pixelado"
         color.rgb = Kd0 * gouraud_illumination;
     }
     else{

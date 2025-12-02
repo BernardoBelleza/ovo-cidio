@@ -76,6 +76,6 @@ void DrawChickenCoops() {
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, MODEL_CHICKEN_COOP);
 
-        DrawVirtualObject("Cube.011_Cube.012");
+        DrawVirtualObject("ChickenCoop");
     }
 }

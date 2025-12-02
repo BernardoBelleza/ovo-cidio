@@ -330,6 +330,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_wolf"), 8);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_rat"), 9);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_chicken_coop"), 10);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_egg"), 11);
+    
     glUseProgram(0);
 }
 
@@ -592,13 +594,8 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     
     // ===== TORRES =====
     printf("\n[TORRES]\n");
-    LoadSingleModel("../../data/models/towers/Low_Poly_Chicken.obj", "chicken_tower");
-    LoadSingleModel("../../data/models/towers/Mesh_Beagle.obj", "beagle_tower");
-    
-    // ===== ARMAS =====
-    printf("\n[ARMAS]\n");
-    LoadSingleModel("../../data/models/guns/M1A1_thompson.obj", "thompson_gun");
-    LoadSingleModel("../../data/models/guns/ak47_2.obj", "ak47");
+    LoadSingleModel("../../data/models/towers/chicken-thompson.obj", "chicken_tower");
+    LoadSingleModel("../../data/models/towers/beagle-ak47.obj", "beagle_tower");
     
     // ===== INIMIGOS =====
     printf("\n[INIMIGOS]\n");
@@ -608,7 +605,8 @@ void LoadAllGameModels(std::map<std::string, SceneObject>& scene) {
     LoadSingleModel("../../data/models/enemies/rat/rat.obj", "rat");
     
     // ===== PROJETEIS ===
-    printf("\n[PROJETEIS]\n");
+    printf("\n[PROJETIL]\n");
+    LoadSingleModel("../../data/models/projectile/Egg.obj", "egg");
     
     
     // ===== AMBIENTE =====

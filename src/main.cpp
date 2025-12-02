@@ -36,6 +36,7 @@
 #include "chicken_coop_system.h"
 #include "hud.h"
 #include "enemy_system.h"
+#include "projectile_system.h"
 
 // Declaração de funções auxiliares para renderizar texto dentro da janela
 // OpenGL. Estas funções estão definidas no arquivo "textrendering.cpp".
@@ -95,49 +96,7 @@ glm::vec4 g_CameraUp = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-// Objeto de física do chicken tower (testes)
-PhysicsObject g_ChickenPhysics = {
-    glm::vec3(0.0f, 5.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 0.0f),
-    1.0f,
-    0.3f,
-    false
-};
 
-// Objeto de física do beagle tower (testes)
-PhysicsObject g_BeaglePhysics = {
-    glm::vec3(0.0f, 5.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 0.0f),
-    1.0f,
-    0.3f,
-    false
-};
-
-// ============================================================================
-// SISTEMA DE ARMA ANEXADA
-// ============================================================================
-struct AttachedWeapon {
-    glm::vec3 offset;        // Posição relativa ao objeto principal
-    glm::vec3 rotation;      // Rotação (Euler angles em radianos)
-    glm::vec3 scale;         // Escala relativa
-    bool enabled;            // Se a arma está visível
-};
-
-// Arma equipada na galinha (ajustar esses valores com as teclas I/J/K/L/U/O)
-AttachedWeapon g_ChickenWeapon = {
-    glm::vec3(-1.60f, 9.00f, 2.60f), // offset (X, Y, Z) - posição ajustada
-    glm::vec3(0.0f, 0.0f, 0.0f),     // rotation
-    glm::vec3(14.0f, 14.0f, 14.0f),     // scale
-    true                              // enabled
-};
-
-// Arma equipada no beagle (AK47)
-AttachedWeapon g_BeagleWeapon = {
-    glm::vec3(-1.60f, 9.00f, 2.60f),     // offset (ajustar conforme necessário)
-    glm::vec3(0.0f, 1.45f, 0.0f),     // rotation
-    glm::vec3(0.2f, 0.2f, 0.2f),     // scale
-    true                              // enabled
-};
 
 CellType g_MapGrid[MAP_HEIGHT][MAP_WIDTH];
 
@@ -260,11 +219,10 @@ int main(int argc, char* argv[])
         float deltaTime = currentTime - prevTime;
         prevTime = currentTime;
         
-        UpdatePhysics(g_ChickenPhysics, deltaTime);
-        UpdatePhysics(g_BeaglePhysics, deltaTime);
         UpdateAllTowersPhysics(deltaTime);
         UpdateAllEnemies(deltaTime);
         UpdateWaveSystem(deltaTime);
+        UpdateProjectiles(deltaTime);
         
         // Aqui executamos as operações de renderização
 
@@ -548,17 +506,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
 
-    // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
-    if (key == GLFW_KEY_H && action == GLFW_PRESS)
-    {
-        // Se o menu de compra estiver aberto, fecha ele
-        if (g_ShowTowerMenu) {
-            CloseTowerMenu();
-        } else {
-            glfwSetWindowShouldClose(window, GL_TRUE);
-        }
-    }
-
     // Sistema de compra de torres
     if (key == GLFW_KEY_1 && action == GLFW_PRESS)
     {
@@ -580,28 +527,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_UseLookDownCamera = !g_UseLookDownCamera;
         printf("Camera: %s\n", g_UseLookDownCamera ? "LOOK DOWN" : "LOOK-AT");
     }
-
-    // Tecla G: Reset da gravidade (testes)
-    if (key == GLFW_KEY_G && action == GLFW_PRESS)
-    {
-        // Reseta posição e velocidade do chicken (testes)
-        g_ChickenPhysics.position.y = 5.0f;
-        g_ChickenPhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        g_ChickenPhysics.onGround = false;
-
-        // Reseta posição e velocidade do beagle (testes)
-        g_BeaglePhysics.position.y = 5.0f;
-        g_BeaglePhysics.velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        g_BeaglePhysics.onGround = false;
-    }
-    
-    // Tecla T: Toggle arma (mostra/esconde)
-    if (key == GLFW_KEY_T && action == GLFW_PRESS)
-    {
-        g_ChickenWeapon.enabled = !g_ChickenWeapon.enabled;
-        printf("Arma: %s\n", g_ChickenWeapon.enabled ? "VISÍVEL" : "ESCONDIDA");
-    }
-    
     // Tecla E: Spawna um lobo (teste de inimigos)
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
@@ -640,43 +565,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         SpawnEnemy(ENEMY_RAT);
         printf("[TESTE] Rato spawnado!\n");
     }
-
-    // ===== AJUSTAR POSIÇÃO DA ARMA (TECLAS I, K, J, L, U, O) =====
-    float offset_step = 0.05f;
-    bool weapon_adjusted = false;
     
-    if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.y += offset_step;  // Cima
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.y -= offset_step;  // Baixo
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_J && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.x -= offset_step;  // Esquerda
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.x += offset_step;  // Direita
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_U && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.z += offset_step;  // Frente
-        weapon_adjusted = true;
-    }
-    if (key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        g_BeagleWeapon.offset.z -= offset_step;  // Trás
-        weapon_adjusted = true;
-    }
-    
-    // Imprime valores atuais quando ajustado
-    if (weapon_adjusted) {
-        printf("Weapon offset: (%.2f, %.2f, %.2f)\n", 
-               g_ChickenWeapon.offset.x, 
-               g_ChickenWeapon.offset.y, 
-               g_ChickenWeapon.offset.z);
-    }
 
 }
 
@@ -811,16 +700,17 @@ void LoadGameResources()
     LoadTextureImage("../../data/textures/grid/grass.jpg");
     LoadTextureImage("../../data/textures/grid/path.jpg");
     LoadTextureImage("../../data/textures/towers/chicken.png");
-    LoadTextureImage("../../data/textures/guns/m1a1/thompson.png");
+    LoadTextureImage("../../data/textures/guns/thompson.png");
     LoadTextureImage("../../data/textures/towers/beagle.png");
-    LoadTextureImage("../../data/textures/guns/ak47/ak47.jpg");
+    LoadTextureImage("../../data/textures/guns/ak47.jpg");
     LoadTextureImage("../../data/textures/enemies/hawk.png");
     LoadTextureImage("../../data/textures/enemies/fox.png");
     LoadTextureImage("../../data/textures/enemies/wolf.png");
     LoadTextureImage("../../data/textures/enemies/rat.png");
     LoadTextureImage("../../data/textures/environment/ChickenCoop.png");
+    LoadTextureImage("../../data/textures/projectile/Egg.png");
 
-    ObjModel planemodel("../../data/plane.obj");
+    ObjModel planemodel("../../data/models/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
@@ -888,6 +778,9 @@ void RenderScene(GLFWwindow* window, const glm::mat4& view, const glm::mat4& pro
     DrawChickenCoops();
     DrawTowerRangeCircle();
     DrawAllEnemies();
+
+    // Desenhemoa todos projeteis
+    DrawAllProjectils();
 
     // Imprimimos na tela informação sobre o número de quadros renderizados
     // por segundo (frames per second).

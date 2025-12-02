@@ -13,6 +13,9 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+#define MODEL_CHICKEN_COOP  40
+
+
 // Atributos de vértice que serão gerados como saída ("out") pelo Vertex Shader.
 // ** Estes serão interpolados pelo rasterizador! ** gerando, assim, valores
 // para cada fragmento, os quais serão recebidos como entrada pelo Fragment
@@ -22,6 +25,9 @@ out vec4 position_model;
 out vec4 normal;
 out vec2 texcoords;
 out vec3 gouraud_illumination;
+uniform int object_id;
+
+
 
 void main()
 {
@@ -68,50 +74,52 @@ void main()
     texcoords = texture_coefficients;
 
     // ***** Gourad Shading *******
+    if(object_id == MODEL_CHICKEN_COOP){
+        // Obtemos a posição da câmera utilizando a inversa da matriz que define o
+        // sistema de coordenadas da câmera.
+        vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
+        vec4 camera_position = inverse(view) * origin;
 
-    // Obtemos a posição da câmera utilizando a inversa da matriz que define o
-    // sistema de coordenadas da câmera.
-    vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
-    vec4 camera_position = inverse(view) * origin;
+        // O fragmento atual é coberto por um ponto que percente à superfície de um
+        // dos objetos virtuais da cena. Este ponto, p, possui uma posição no
+        // sistema de coordenadas global (World coordinates). Esta posição é obtida
+        // através da interpolação, feita pelo rasterizador, da posição de cada
+        // vértice.
+        vec4 p = position_world;
 
-    // O fragmento atual é coberto por um ponto que percente à superfície de um
-    // dos objetos virtuais da cena. Este ponto, p, possui uma posição no
-    // sistema de coordenadas global (World coordinates). Esta posição é obtida
-    // através da interpolação, feita pelo rasterizador, da posição de cada
-    // vértice.
-    vec4 p = position_world;
+        // Normal do fragmento atual, interpolada pelo rasterizador a partir das
+        // normais de cada vértice.
+        vec4 n = normalize(normal);
 
-    // Normal do fragmento atual, interpolada pelo rasterizador a partir das
-    // normais de cada vértice.
-    vec4 n = normalize(normal);
+        // Vetor que define o sentido da fonte de luz em relação ao ponto atual.
+        vec4 light_source_point = vec4(0.0,15.0,0.0,1.0);
+        vec4 l = normalize(light_source_point - p);
 
-    // Vetor que define o sentido da fonte de luz em relação ao ponto atual.
-    vec4 light_source_point = vec4(0.0,15.0,0.0,1.0);
-    vec4 l = normalize(light_source_point - p);
+        // Vetor que define o sentido da câmera em relação ao ponto atual.
+        vec4 v = normalize(camera_position - p);
 
-    // Vetor que define o sentido da câmera em relação ao ponto atual.
-    vec4 v = normalize(camera_position - p);
+        // Half-vector do blinn-phong
+        vec4 h = normalize(l + v);
+        
+        // Coordenadas de textura U e V
+        float U = 0.0;
+        float V = 0.0;
 
-    // Half-vector do blinn-phong
-    vec4 h = normalize(l + v);
-    
-    // Coordenadas de textura U e V
-    float U = 0.0;
-    float V = 0.0;
-
-    // Se nada for definido, o padrão da luz é nulo no objeto
-    vec3 Kd0 = vec3(0.0, 0.0, 0.0); 
-    vec3 Ks0 = vec3(0.0, 0.0, 0.0); 
-    float q = 1000.0; // Para ser ignorável deve ser muito alto
-    vec3 I = vec3(1.0, 1.0, 1.0); // Intensidade da luz branca
-
-
-    // Equação de Iluminação
-    float lambert = max(0,dot(n,l));
-    vec3 phong_specular_term  = Ks0 * I * pow(max(dot(n, h), 0.0),q); 
+        // Se nada for definido, o padrão da luz é nulo no objeto
+        vec3 Kd0 = vec3(0.0, 0.0, 0.0); 
+        vec3 Ks0 = vec3(0.0, 0.0, 0.0); 
+        float q = 1000.0; // Para ser ignorável deve ser muito alto
+        vec3 I = vec3(1.0, 1.0, 1.0); // Intensidade da luz branca
 
 
-    gouraud_illumination = I * (lambert + 0.01) + (phong_specular_term);
+        // Equação de Iluminação
+        float lambert = max(0,dot(n,l));
+        vec3 phong_specular_term  = Ks0 * I * pow(max(dot(n, h), 0.0),q); 
 
+
+        gouraud_illumination = I * (lambert + 0.01) + (phong_specular_term);
+    }
+  
+  
 }
 

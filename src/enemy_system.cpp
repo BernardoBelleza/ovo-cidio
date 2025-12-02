@@ -188,7 +188,7 @@ void FindPathWaypoints() {
     
 }
 
-static const EnemyAttributes& GetEnemyAttributes(EnemyType type) {
+const EnemyAttributes& GetEnemyAttributes(EnemyType type) {
     switch(type) {
         case ENEMY_WOLF: return WOLF_ATTRIBUTES;
         case ENEMY_HAWK: return HAWK_ATTRIBUTES;
@@ -198,7 +198,7 @@ static const EnemyAttributes& GetEnemyAttributes(EnemyType type) {
     }
 }
 
-static const EnemyRenderInfo& GetEnemyRenderInfo(EnemyType type) {
+const EnemyRenderInfo& GetEnemyRenderInfo(EnemyType type) {
     switch(type) {
         case ENEMY_WOLF: return WOLF_RENDER;
         case ENEMY_HAWK: return HAWK_RENDER;
@@ -224,6 +224,8 @@ int GetEnemyModelID(EnemyType type) {
 }
 
 void SpawnEnemy(EnemyType type) {    
+        printf("oi");
+
     const EnemyAttributes& attrs = GetEnemyAttributes(type);
     
     Enemy enemy;
@@ -242,7 +244,6 @@ void SpawnEnemy(EnemyType type) {
 void UpdateAllEnemies(float deltaTime) {
     for (int i = (int)g_Enemies.size() - 1; i >= 0; i--) {
         Enemy& enemy = g_Enemies[i];
-        
         if (!enemy.active || enemy.health <= 0.0f) {
             g_Enemies.erase(g_Enemies.begin() + i);
             continue;
@@ -302,7 +303,7 @@ void DrawAllEnemies() {
         glm::mat4 model = Matrix_Translate(enemy.position.x, enemy.position.y + renderInfo.yOffset, enemy.position.z)
                         * Matrix_Rotate_Y(angle)
                         * Matrix_Scale(renderInfo.scaleX, renderInfo.scaleY, renderInfo.scaleZ);
-        
+       
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, modelID);
         DrawVirtualObject(renderInfo.meshName);
