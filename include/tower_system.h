@@ -83,7 +83,6 @@ void TowerShoot(Tower& tower);
 void OpenTowerMenu(int gridX, int gridZ);
 void CloseTowerMenu();
 void BuyTower(TowerType type);
-void ShowTowerMenuOnScreen();
 
 
 #endif // TOWER_SYSTEM_H
