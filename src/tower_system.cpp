@@ -297,8 +297,8 @@ void OpenTowerMenu(int gridX, int gridZ) {
     g_MenuGridZ = gridZ;
     
     AddConsoleMessage("=== MENU DE TORRES ===");
-    AddConsoleMessage("[1] Galinha ($100) | [2] Beagle ($150)");
-    AddConsoleMessage("Pressione 1 ou 2 para comprar, ESC para cancelar");
+    AddConsoleMessage("[1] Galinha ($100) | [2] Beagle ($200)");
+    AddConsoleMessage("Pressione 1 ou 2 para comprar");
 }
 
 void CloseTowerMenu() {
@@ -314,7 +314,7 @@ void BuyTower(TowerType type) {
     }
     
     const char* typeName = (type == TOWER_CHICKEN) ? "Galinha" : "Beagle";
-    int cost = (type == TOWER_CHICKEN) ? 100 : 150;
+    int cost = (type == TOWER_CHICKEN) ? CHICKEN_TOWER.buildCost : BEAGLE_TOWER.buildCost;
     
     // Verificar se tem dinheiro suficiente
     if (!SpendMoney(cost)) {
@@ -335,11 +335,6 @@ void BuyTower(TowerType type) {
     }
 }
 
-void ShowTowerMenuOnScreen() {
-    // Esta função será chamada no loop de renderização
-    // Por enquanto, o menu é mostrado no console
-    // No futuro, pode ser implementado um menu visual na tela
-}
 
 glm::vec3 GetDirectionToNearestPath(int originX, int originZ, float range) {
     int foundX = -1;

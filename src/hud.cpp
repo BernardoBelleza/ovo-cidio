@@ -52,12 +52,10 @@ void ClearConsoleMessages() {
 void InitializeHUD() {
     InitializeEconomy();
     ClearConsoleMessages();
-    AddConsoleMessage("Bem-vindo ao Tower Defense!");
-    AddConsoleMessage("Dinheiro inicial: $1000");
+    AddConsoleMessage("Bem-vindo ao Ovocidio!");
 }
 
 void RenderHUD(GLFWwindow* window, int screenWidth, int screenHeight) {
-    // ===== RENDERIZAR DINHEIRO (CANTO SUPERIOR ESQUERDO) =====
     std::stringstream moneyText;
     moneyText << "Dinheiro: $" << g_PlayerMoney;
     
@@ -119,7 +117,8 @@ void RenderHUD(GLFWwindow* window, int screenWidth, int screenHeight) {
     float instrScale = 0.8f;
     
     TextRendering_PrintString(window, "Duplo-clique: Abrir menu", instrX, instrY, instrScale);
-    TextRendering_PrintString(window, "ESC: Fechar menu", instrX, instrY - 0.06f, instrScale);
-    TextRendering_PrintString(window, "ENTER: Iniciar próxima wave", instrX, instrY - 0.09f, instrScale);
+    TextRendering_PrintString(window, "ENTER: Iniciar proxima wave", instrX, instrY - 0.09f, instrScale);
     TextRendering_PrintString(window, "1/2: Comprar torre", instrX, instrY - 0.12f, instrScale);
+    TextRendering_PrintString(window, "1: Torre Galinha ($100)", instrX, instrY - 0.15f, instrScale);
+    TextRendering_PrintString(window, "2: Torre Beagle ($200)", instrX, instrY - 0.18f, instrScale);
 }

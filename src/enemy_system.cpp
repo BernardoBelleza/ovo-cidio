@@ -54,8 +54,6 @@ static void GenerateWave(int waveNumber) {
         if (spawn.spawnTime < 0.0f) 
         spawn.spawnTime = 0.0f;
         
-        // Escolhe tipo de inimigo baseado na wave, mais tipos de inimigos quanto mais avançado
-        float waveProgress = (float)waveNumber;
         
         if (waveNumber == 0) {
             spawn.type = ENEMY_RAT;
@@ -100,8 +98,7 @@ static void GenerateWave(int waveNumber) {
     
     g_Waves.push_back(newWave);
     
-    printf("[WAVE] Wave %d gerada: %d inimigos, duracao %.1fs\n", 
-           waveNumber + 1, enemyCount, newWave.duration);
+
 }
 
 static glm::vec3 GridToWorld(int gridX, int gridZ) {
@@ -301,9 +298,6 @@ void UpdateAllEnemies(float deltaTime) {
                     const EnemyAttributes& attrs = GetEnemyAttributes(enemy.type);
                     g_PlayerLives -= attrs.damageToBase;
             
-                    const char* enemyName = (enemy.type == ENEMY_WOLF) ? "Lobo" :
-                                   (enemy.type == ENEMY_HAWK) ? "Gaviao" :
-                                   (enemy.type == ENEMY_FOX) ? "Raposa" : "Rato";
                     if(g_PlayerLives < 0) g_PlayerLives = 0;
          
                 }

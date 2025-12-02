@@ -506,23 +506,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
- if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        extern int g_PlayerLives;
-        if (g_PlayerLives <= 0) {
 
-            g_PlayerLives = PLAYER_STARTING_LIVES;
-            g_PlayerMoney = PLAYER_MONEY_START;
-            
-            g_Enemies.clear();
-            
-            extern std::vector<Projectile> g_Projectiles;
-            g_Projectiles.clear();
-            
-            InitializeEnemySystem();
-            
-        }
-    }
     // Sistema de compra de torres
     if (key == GLFW_KEY_1 && action == GLFW_PRESS)
     {

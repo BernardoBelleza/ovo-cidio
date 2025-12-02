@@ -47,12 +47,11 @@ const int MAP_SIZE = 15;
 #define TOWER_RANGE_CIRCLE  99
 
 // Configurações do jogo
-const int PLAYER_STARTING_GOLD = 300;
+const int PLAYER_MONEY_START = 300;
 const int PLAYER_STARTING_LIVES = 20;
 const int MAX_TOWERS = 20;
 const int MAX_ENEMIES = 50;
 const int MAX_PROJECTILES = 100;
-const int PLAYER_MONEY_START = 300;
 
 // Tipos de células
 enum CellType {
@@ -168,14 +167,7 @@ struct ProjectileAttributes {
     float damage;
     float maxDistance;
 };
-
-// Projeteis disponiveis
-const ProjectileAttributes BULLET = {
-    15.0f,
-    10.0f,
-    10.0f
-};
-
+ 
 // ============================================================================
 // CONFIGURAÇÕES DE RENDERIZAÇÃO DE INIMIGOS
 // ============================================================================
