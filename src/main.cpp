@@ -96,6 +96,8 @@ glm::vec4 g_CameraUp = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
+int g_PlayerLives = PLAYER_STARTING_LIVES;
+
 
 
 CellType g_MapGrid[MAP_HEIGHT][MAP_WIDTH];
@@ -456,8 +458,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
     
-        if (!g_UseLookDownCamera)
-        {
+    
             // ===== CÂMERA LOOK-AT =====
             // Atualizamos parâmetros da câmera com os deslocamentos
             g_CameraTheta -= 0.01f*dx;
@@ -472,7 +473,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         
             if (g_CameraPhi < phimin)
                 g_CameraPhi = phimin;
-        }
+        
     
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
@@ -505,7 +506,23 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+ if (key == GLFW_KEY_R && action == GLFW_PRESS)
+    {
+        extern int g_PlayerLives;
+        if (g_PlayerLives <= 0) {
 
+            g_PlayerLives = PLAYER_STARTING_LIVES;
+            g_PlayerMoney = PLAYER_MONEY_START;
+            
+            g_Enemies.clear();
+            
+            extern std::vector<Projectile> g_Projectiles;
+            g_Projectiles.clear();
+            
+            InitializeEnemySystem();
+            
+        }
+    }
     // Sistema de compra de torres
     if (key == GLFW_KEY_1 && action == GLFW_PRESS)
     {

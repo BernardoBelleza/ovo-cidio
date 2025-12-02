@@ -1,11 +1,13 @@
 #include "hud.h"
 #include "game_attributes.h"
+#include "enemy_system.h"
 #include <GLFW/glfw3.h>
 #include <sstream>
 #include <iomanip>
 
 // Declaração externa da função de text rendering (definida em main.cpp)
 extern void TextRendering_PrintString(GLFWwindow* window, const std::string &str, float x, float y, float scale);
+extern int g_PlayerLives;
 
 int g_PlayerMoney;
 
@@ -64,7 +66,37 @@ void RenderHUD(GLFWwindow* window, int screenWidth, int screenHeight) {
     float moneyScale = 1.5f;
     
     TextRendering_PrintString(window, moneyText.str(), moneyX, moneyY, moneyScale);
+
+   std::stringstream livesText;
+    livesText << "Vidas: " << g_PlayerLives << "/" << PLAYER_STARTING_LIVES;
     
+
+    TextRendering_PrintString(window, livesText.str(), -0.95f, 0.8f, 1.3f);
+    
+    // ===== WAVE INFO =====
+    int currentWave = GetCurrentWaveNumber();
+    bool waveActive = IsWaveActive();
+    
+    std::stringstream waveText;
+    if (currentWave >= 0) {
+        if (waveActive) {
+            waveText << "Wave " << (currentWave + 1) << " - EM ANDAMENTO";
+        } else {
+            waveText << "Wave " << (currentWave + 1) << " COMPLETA!";
+        }
+    } else {
+        waveText << "Pressione ENTER para iniciar Wave 1";
+    }
+    TextRendering_PrintString(window, waveText.str(), -0.95f, 0.7f, 1.2f);
+    
+    // ===== GAME OVER =====
+    if (g_PlayerLives <= 0) {
+        std::stringstream gameOverText;
+        gameOverText << "=== GAME OVER ===";
+        TextRendering_PrintString(window, gameOverText.str(), -0.3f, 0.0f, 2.0f);
+                
+    }
+
     // ===== RENDERIZAR MENSAGENS DO CONSOLE (CANTO INFERIOR ESQUERDO) =====
     float messageX = -0.95f;
     float messageY = -0.7f;
@@ -88,5 +120,6 @@ void RenderHUD(GLFWwindow* window, int screenWidth, int screenHeight) {
     
     TextRendering_PrintString(window, "Duplo-clique: Abrir menu", instrX, instrY, instrScale);
     TextRendering_PrintString(window, "ESC: Fechar menu", instrX, instrY - 0.06f, instrScale);
+    TextRendering_PrintString(window, "ENTER: Iniciar próxima wave", instrX, instrY - 0.09f, instrScale);
     TextRendering_PrintString(window, "1/2: Comprar torre", instrX, instrY - 0.12f, instrScale);
 }

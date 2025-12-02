@@ -13,6 +13,8 @@
 std::vector<Enemy> g_Enemies;
 std::vector<glm::vec3> g_PathWaypoints;
 
+extern int g_PlayerLives;
+
 static std::vector<Wave> g_Waves;
 static int g_CurrentWave;
 static float g_WaveTimer;
@@ -294,6 +296,16 @@ void UpdateAllEnemies(float deltaTime) {
                     enemy.position = g_PathWaypoints.back();
                     enemy.active = false;
                     printf("[ENEMY] Inimigo chegou na base!\n");
+
+                    // Tira vida
+                    const EnemyAttributes& attrs = GetEnemyAttributes(enemy.type);
+                    g_PlayerLives -= attrs.damageToBase;
+            
+                    const char* enemyName = (enemy.type == ENEMY_WOLF) ? "Lobo" :
+                                   (enemy.type == ENEMY_HAWK) ? "Gaviao" :
+                                   (enemy.type == ENEMY_FOX) ? "Raposa" : "Rato";
+                    if(g_PlayerLives < 0) g_PlayerLives = 0;
+         
                 }
             } else {
                 glm::vec3 oldPos = enemy.position;
