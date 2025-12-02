@@ -41,7 +41,7 @@ void UpdateProjectiles(float deltaTime) {
 
         p.position += p.direction * p.speed * deltaTime;
 
-        Sphere projectileSphere = CreateSphere(p.position, 0.2f);
+        Sphere projectileSphere = CreateSphere(p.position, 0.05f);
         if (TestSpherePlane(projectileSphere, groundPlane)) {
             p.active = false; // Projétil atingiu o chão
         }

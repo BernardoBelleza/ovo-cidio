@@ -21,12 +21,6 @@ struct PhysicsObject {
 // ESTRUTURA DE TORRE
 // ============================================================================
 
-// Tipos de torres disponíveis
-enum TowerType {
-    TOWER_CHICKEN = 0,
-    TOWER_BEAGLE = 1,
-    TOWER_TYPE_COUNT = 2
-};
 
 struct Tower {
     int gridX, gridZ;        // Posicao no grid

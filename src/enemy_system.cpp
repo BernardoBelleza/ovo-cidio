@@ -2,6 +2,7 @@
 #include "game_attributes.h"
 #include "matrices.h"
 #include "resource_loader.h"
+#include "hud.h"
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -21,66 +22,84 @@ static bool g_WaveActive;
 static void InitializeWaves() {
     g_Waves.clear();
     
-    Wave wave1;
-    wave1.duration = 20.0f;
-    wave1.spawns = {
-        {ENEMY_RAT, 0.0f},
-        {ENEMY_RAT, 3.0f},
-        {ENEMY_RAT, 6.0f},
-        {ENEMY_RAT, 9.0f},
-        {ENEMY_RAT, 12.0f}
-    };
-    g_Waves.push_back(wave1);
+    // Gera 20 waves iniciais (sistema gerará mais conforme necessário)
+    for (int wave = 0; wave < 20; wave++) {
+        GenerateWave(wave);
+    }
+}
+
+static void GenerateWave(int waveNumber) {
+    Wave newWave;
     
-    Wave wave2;
-    wave2.duration = 30.0f;
-    wave2.spawns = {
-        {ENEMY_RAT, 0.0f},
-        {ENEMY_RAT, 1.0f},
-        {ENEMY_FOX, 3.0f},
-        {ENEMY_RAT, 5.0f},
-        {ENEMY_FOX, 7.0f},
-        {ENEMY_RAT, 9.0f},
-        {ENEMY_FOX, 11.0f},
-        {ENEMY_RAT, 13.0f}
-    };
-    g_Waves.push_back(wave2);
+    newWave.duration = 30.0f + (waveNumber * 5.0f);
     
-    Wave wave3;
-    wave3.duration = 40.0f;
-    wave3.spawns = {
-        {ENEMY_WOLF, 0.0f},
-        {ENEMY_HAWK, 2.0f},
-        {ENEMY_WOLF, 4.0f},
-        {ENEMY_HAWK, 6.0f},
-        {ENEMY_FOX, 8.0f},
-        {ENEMY_FOX, 9.0f},
-        {ENEMY_WOLF, 11.0f},
-        {ENEMY_HAWK, 13.0f},
-        {ENEMY_WOLF, 15.0f},
-        {ENEMY_HAWK, 17.0f}
-    };
-    g_Waves.push_back(wave3);
+    int enemyCount = 5 + (waveNumber * 2);
     
-    Wave wave4;
-    wave4.duration = 50.0f;
-    wave4.spawns = {
-        {ENEMY_WOLF, 0.0f},
-        {ENEMY_WOLF, 1.5f},
-        {ENEMY_WOLF, 3.0f},
-        {ENEMY_HAWK, 5.0f},
-        {ENEMY_HAWK, 6.0f},
-        {ENEMY_WOLF, 8.0f},
-        {ENEMY_WOLF, 9.5f},
-        {ENEMY_WOLF, 11.0f},
-        {ENEMY_FOX, 13.0f},
-        {ENEMY_FOX, 14.0f},
-        {ENEMY_FOX, 15.0f},
-        {ENEMY_WOLF, 17.0f},
-        {ENEMY_WOLF, 18.5f},
-        {ENEMY_WOLF, 20.0f}
-    };
-    g_Waves.push_back(wave4);
+    if (enemyCount > 30) {
+        enemyCount = 30;
+    }
+    
+    // Intervalo entre spawns diminui gradualmente (mais frenético)
+    float baseInterval = newWave.duration / (float)enemyCount;
+    
+    for (int i = 0; i < enemyCount; i++) {
+        EnemySpawn spawn;
+        
+        // Variação de tempo no spawn
+        float randomOffset = ((float)(rand() % 100) / 100.0f - 0.5f) * 2.0f;
+        spawn.spawnTime = (i * baseInterval) + randomOffset;
+        
+        if (spawn.spawnTime < 0.0f) 
+        spawn.spawnTime = 0.0f;
+        
+        // Escolhe tipo de inimigo baseado na wave, mais tipos de inimigos quanto mais avançado
+        float waveProgress = (float)waveNumber;
+        
+        if (waveNumber == 0) {
+            spawn.type = ENEMY_RAT;
+        }
+        else if (waveNumber <= 2) {
+            spawn.type = (i % 3 == 0) ? ENEMY_FOX : ENEMY_RAT;
+        }
+        else if (waveNumber <= 5) {
+            int r = i % 4;
+            if (r == 0) 
+                spawn.type = ENEMY_WOLF;
+            else if (r == 1) 
+                spawn.type = ENEMY_FOX;
+            else 
+                spawn.type = ENEMY_RAT;
+        }
+        else if (waveNumber <= 8) {
+            int r = i % 5;
+            if (r == 0) 
+                spawn.type = ENEMY_HAWK;
+            else if (r == 1) 
+                spawn.type = ENEMY_WOLF;
+            else if (r == 2) 
+                spawn.type = ENEMY_FOX;
+            else 
+                spawn.type = ENEMY_RAT;
+        }
+        else {
+            int r = i % 6;
+            if (r == 0 || r == 1) 
+                spawn.type = ENEMY_WOLF;  // 33% lobos
+            else if (r == 2) 
+                spawn.type = ENEMY_HAWK;       // 17% gaviões
+            else if (r == 3) 
+                spawn.type = ENEMY_FOX;        // 17% raposas
+            else 
+                spawn.type = ENEMY_RAT;                    // 33% ratos
+        }
+        
+        newWave.spawns.push_back(spawn);
+    }
+    
+    g_Waves.push_back(newWave);
+    
+    printf("[WAVE] Wave %d gerada: %d inimigos, duracao %.1fs\n", 
+           waveNumber + 1, enemyCount, newWave.duration);
 }
 
 static glm::vec3 GridToWorld(int gridX, int gridZ) {
@@ -224,7 +243,6 @@ int GetEnemyModelID(EnemyType type) {
 }
 
 void SpawnEnemy(EnemyType type) {    
-        printf("oi");
 
     const EnemyAttributes& attrs = GetEnemyAttributes(type);
     
@@ -245,6 +263,10 @@ void UpdateAllEnemies(float deltaTime) {
     for (int i = (int)g_Enemies.size() - 1; i >= 0; i--) {
         Enemy& enemy = g_Enemies[i];
         if (!enemy.active || enemy.health <= 0.0f) {
+
+            const EnemyAttributes& attrs = GetEnemyAttributes(enemy.type);
+            AddMoney(attrs.goldReward);
+
             g_Enemies.erase(g_Enemies.begin() + i);
             continue;
         }
@@ -353,20 +375,21 @@ glm::vec3 GetBezierControlPoint(int waypointIndex, bool isP1) {
 }
 
 void StartWave(int waveNumber) {
+    // Para gerar mais waves se necessário, por exemplo, gerar de 10 em dez
+    while (waveNumber >= (int)g_Waves.size()) {
+        GenerateWave(g_Waves.size());
+    }
+    
     if (waveNumber < 0 || waveNumber >= (int)g_Waves.size()) {
-        printf("[WAVE] Aviso: Voce derrotou todas as waves!\n");
         return;
     }
     
     g_CurrentWave = waveNumber;
+    g_WaveActive = true;
     g_WaveTimer = 0.0f;
     g_NextSpawnIndex = 0;
-    g_WaveActive = true;
-    
-    printf("[WAVE] Wave %d iniciada! (%d inimigos)\n", 
-           waveNumber + 1, 
-           (int)g_Waves[waveNumber].spawns.size());
 }
+
 
 void UpdateWaveSystem(float deltaTime) {
     if (!g_WaveActive || g_CurrentWave < 0) return;
@@ -388,7 +411,6 @@ void UpdateWaveSystem(float deltaTime) {
     
     if (g_NextSpawnIndex >= (int)currentWave.spawns.size() && g_Enemies.empty()) {
         g_WaveActive = false;
-        printf("[WAVE] Wave %d completa!\n", g_CurrentWave + 1);
     }
 }
 

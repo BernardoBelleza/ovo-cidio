@@ -28,11 +28,16 @@ glm::vec3 CalculateBezierPoint(const glm::vec3& p0, const glm::vec3& p1,
                                const glm::vec3& p2, const glm::vec3& p3, float t);
 glm::vec3 GetBezierControlPoint(int waypointIndex, bool isP1);
 
+
+static void InitializeWaves();
+static void GenerateWave(int waveNumber); 
 void StartWave(int waveNumber);
 void UpdateWaveSystem(float deltaTime);
 bool IsWaveActive();
 bool IsWaveComplete();
 int GetCurrentWaveNumber();
+
+
 
 const EnemyRenderInfo& GetEnemyRenderInfo(EnemyType type); 
 const EnemyAttributes& GetEnemyAttributes(EnemyType type);

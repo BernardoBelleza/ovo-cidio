@@ -99,9 +99,11 @@ bool AddTower(int gridX, int gridZ, TowerType type) {
     g_Towers[g_TowerCount].physics.onGround = false;
     
     // Inicializa atributos de combate
-    g_Towers[g_TowerCount].attackRange = 3.0f;
-    g_Towers[g_TowerCount].attackDamage = 10.0f;
-    g_Towers[g_TowerCount].attackSpeed = 1.0f;
+    const TowerAttributes& attrs = (type == TOWER_CHICKEN) ? CHICKEN_TOWER : BEAGLE_TOWER;
+
+    g_Towers[g_TowerCount].attackRange = attrs.attackRange;
+    g_Towers[g_TowerCount].attackDamage = attrs.attackDamage;
+    g_Towers[g_TowerCount].attackSpeed = attrs.attackSpeed;
     g_Towers[g_TowerCount].type = type;
     g_Towers[g_TowerCount].cooldownTimer = 0.0f;
     

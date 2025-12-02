@@ -47,12 +47,12 @@ const int MAP_SIZE = 15;
 #define TOWER_RANGE_CIRCLE  99
 
 // Configurações do jogo
-const int PLAYER_STARTING_GOLD = 200;
+const int PLAYER_STARTING_GOLD = 300;
 const int PLAYER_STARTING_LIVES = 20;
 const int MAX_TOWERS = 20;
 const int MAX_ENEMIES = 50;
 const int MAX_PROJECTILES = 100;
-const int PLAYER_MONEY_START = 10001;
+const int PLAYER_MONEY_START = 300;
 
 // Tipos de células
 enum CellType {
@@ -70,6 +70,12 @@ extern CellType g_MapGrid[MAP_HEIGHT][MAP_WIDTH];
 // ATRIBUTOS DE TORRES
 // ============================================================================
 
+
+enum TowerType {
+    TOWER_CHICKEN = 0,
+    TOWER_BEAGLE = 1
+};
+
 struct TowerAttributes {
     float attackDamage;
     float attackRange;
@@ -78,12 +84,21 @@ struct TowerAttributes {
 };
 
 // Torres disponiveis
+
 const TowerAttributes CHICKEN_TOWER = {
-    10.0f,
-    3.0f,
-    1.5f,
-    50
+    15.0f,  
+    3.0f,   
+    1.2f,   
+    100     
 };
+
+const TowerAttributes BEAGLE_TOWER = {
+    25.0f,  
+    4.0f,   
+    0.8f,  
+    200     
+};
+
 
 // ============================================================================
 // ATRIBUTOS DE INIMIGOS
@@ -117,30 +132,30 @@ struct EnemyAttributes {
 
 // Inimigos disponiveis
 const EnemyAttributes WOLF_ATTRIBUTES = {
-    100.0f,
-    1.5f,
-    20,
-    2
+    80.0f,
+    1.2f,
+    50,
+    3
 };
 
 const EnemyAttributes HAWK_ATTRIBUTES = {
-    50.0f,
-    2.5f,
-    15,
-    1
+    40.0f,
+    2.0f,
+    30,
+    2
 };
 
 const EnemyAttributes FOX_ATTRIBUTES = {
-    75.0f,
-    2.0f,
-    25,
-    1
+    60.0f,
+    1.5f,
+    40,
+    2
 };
 
 const EnemyAttributes RAT_ATTRIBUTES = {
-    20.0f,
-    3.0f,
-    10,
+    30.0f,
+    1.0f,
+    20,
     1
 };
 
