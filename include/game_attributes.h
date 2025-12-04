@@ -85,14 +85,14 @@ struct TowerAttributes {
 // Torres disponiveis
 
 const TowerAttributes CHICKEN_TOWER = {
-    15.0f,  
+    5.0f,  
     3.0f,   
     1.2f,   
     100     
 };
 
 const TowerAttributes BEAGLE_TOWER = {
-    25.0f,  
+    10.0f,  
     4.0f,   
     0.8f,  
     200     

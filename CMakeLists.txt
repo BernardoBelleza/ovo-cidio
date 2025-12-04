@@ -16,6 +16,8 @@ set(SOURCES
   src/chicken_coop_system.cpp
   src/resource_loader.cpp
   src/enemy_system.cpp
+  src/collisions.cpp
+  src/projectile_system.cpp
 )
 
 cmake_minimum_required(VERSION 3.5.0)
