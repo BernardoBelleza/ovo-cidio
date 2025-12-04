@@ -123,7 +123,7 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_thompson, vec2(U, V)).rgb;
-        Ks0 = Kd0 * 0.8; 
+        Ks0 = vec3(0.9, 0.9, 0.9); 
         q = 10.0;
     }
     else if ( object_id == MODEL_BEAGLE_TOWER )
@@ -137,7 +137,7 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(texture_ak47, vec2(U, V)).rgb;
-        Ks0 = Kd0 * 0.8;
+        Ks0 = vec3(0.9, 0.9, 0.9);
         q = 10.0;
 
  }
